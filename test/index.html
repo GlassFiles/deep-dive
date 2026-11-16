@@ -386,6 +386,21 @@ body.typing #qBody:has(textarea#ans) > *{flex:1 1 100%}
 body.typing #qBody:has(textarea#ans) > textarea#ans,body.typing #qBody:has(textarea#ans) > .fuse{flex:1 1 0;min-width:0}
 body.typing #qBody:has(textarea#ans) > .row{flex:0 0 auto;margin:0!important}
 body.typing #qBody:has(textarea#ans) #lock{min-height:44px;padding:8px 14px;font-size:15px}
+/* 14n: one Settings panel on the front page, and shelf tiles */
+.setbox{margin:12px 0 4px;border:1px solid var(--line);border-radius:12px;padding:0 12px}
+.setbox > summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;list-style:none}
+.setbox > summary::-webkit-details-marker{display:none}
+.setbox > summary::after{content:"Change";margin-left:auto;font-size:14px;color:var(--sun);text-decoration:underline}
+.setbox[open] > summary::after{content:"Done"}
+.setbox > summary .note{margin:0}
+.setbox[open]{padding-bottom:10px}
+.seg[data-qtype] small{margin-left:6px;opacity:.75}
+.pack.shelftile b{font-size:17px}
+.mixbox{border:1px solid var(--line);border-radius:12px;padding:0 12px;margin-top:4px}
+.mixbox > summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;list-style:none}
+.mixbox > summary::-webkit-details-marker{display:none}
+.mixbox > summary::after{content:"Change";margin-left:auto;font-size:14px;color:var(--sun);text-decoration:underline}
+.mixbox[open] > summary::after{content:"Done"}.mixbox[open]{padding-bottom:10px}
 
 </style>
 </head>
@@ -411,8 +426,6 @@ body.typing #qBody:has(textarea#ans) #lock{min-height:44px;padding:8px 14px;font
             <button class="btn go startbtn" id="btnStart"><span id="btnStartTxt">Start today's descent</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>
           <div class="row" style="margin-top:8px"><button class="btn" id="btnPractice">Practise first (no clock, no score)</button></div>
-          <div class="row themes" id="clockRow" style="margin-top:10px" role="group" aria-label="The clock in free dives"><span class="note">Clock</span><button class="seg" data-clock="normal" aria-pressed="true">Normal</button><button class="seg" data-clock="relaxed" aria-pressed="false">Relaxed (double time)</button><button class="seg" data-clock="off" aria-pressed="false">No clock</button></div>
-          <p class="note" id="clockNote" style="margin:-4px 0 10px">For free dives. Today's descent always uses the normal clock, so everyone's score is fair.</p>
           <p class="note" id="startNote" style="margin-top:8px"></p>
           <p class="note" id="nameNote" style="margin-top:2px" aria-live="polite">Just a name for the scoreboard. No login. Your name and your dives stay in this browser (and on the scoreboard, if you use it).</p>
         </div>
@@ -425,9 +438,15 @@ body.typing #qBody:has(textarea#ans) #lock{min-height:44px;padding:8px 14px;font
         <input class="field hide" id="packSearch" type="search" placeholder="Find a pack" aria-label="Find a pack" style="margin-bottom:10px">
         <div class="packs" id="packList"></div>
         <p class="note" id="packNote" style="margin-top:10px"></p>
-        <div class="row themes" role="group" aria-label="How your score moves"><span class="note">Play as</span><button class="seg" data-theme="dive" aria-pressed="true">Dive</button><button class="seg" data-theme="golf" aria-pressed="false">Golf</button></div>
-        <div class="row themes" id="subRow" role="group" aria-label="Your submarine"><span class="note">Your sub</span><button class="seg" data-sub="coral" aria-pressed="true">Coral</button><button class="seg" data-sub="ram" aria-pressed="false">Ram</button><button class="seg" data-sub="nautilus" aria-pressed="false">Nautilus</button><button class="seg" data-sub="bathy" aria-pressed="false">Bathyscaphe</button><button class="seg" data-sub="cray" aria-pressed="false">Crayfish</button><button class="seg" data-sub="titan" aria-pressed="false">Titan</button><button class="seg" data-sub="bunny" aria-pressed="false">Bunny</button><button class="seg" data-sub="rugby" aria-pressed="false">Rugby ball</button><button class="seg" data-sub="mic" aria-pressed="false">Sparkle mic</button><button class="seg" data-sub="santa" aria-pressed="false">Santa</button><button class="seg" data-sub="turtle" aria-pressed="false">Turtle (1775)</button><button class="seg" data-sub="alvin" aria-pressed="false">Research sub</button><button class="seg subMore" id="subMore" aria-expanded="false" aria-controls="subRow">More subs</button></div>
-        <label class="switch" id="calmRow"><input type="checkbox" id="calm"> Calm sea: the animals and visitors rest</label>
+        <details class="setbox" id="setBox"><summary><b>Settings</b> <span class="note" id="setSum"></span></summary>
+          <div class="row themes" id="typeRow" role="group" aria-label="Question types in free dives"><span class="note">Questions</span><button class="seg" data-qtype="" aria-pressed="true">All types</button><button class="seg" data-qtype="rare" aria-pressed="false">Rare answer</button><button class="seg" data-qtype="choice" aria-pressed="false">Bet on it</button><button class="seg" data-qtype="number" aria-pressed="false">Closest number</button><button class="seg" data-qtype="order" aria-pressed="false">Put in order</button><button class="seg" data-qtype="clues" aria-pressed="false">Clue by clue</button><button class="seg" data-qtype="short" aria-pressed="false">Mark scheme</button></div>
+          <p class="note" id="typeNote" style="margin:-4px 0 10px"></p>
+          <div class="row themes" id="clockRow" role="group" aria-label="The clock in free dives"><span class="note">Clock</span><button class="seg" data-clock="normal" aria-pressed="true">Normal</button><button class="seg" data-clock="relaxed" aria-pressed="false">Relaxed (double time)</button><button class="seg" data-clock="off" aria-pressed="false">No clock</button></div>
+          <p class="note" id="clockNote" style="margin:-4px 0 10px">For free dives and practice. Today's descent always uses the normal clock, so everyone's score is fair.</p>
+          <div class="row themes" role="group" aria-label="How your score moves"><span class="note">Play as</span><button class="seg" data-theme="dive" aria-pressed="true">Dive</button><button class="seg" data-theme="golf" aria-pressed="false">Golf</button></div>
+          <div class="row themes" id="subRow" role="group" aria-label="Your submarine"><span class="note">Your sub</span><button class="seg" data-sub="coral" aria-pressed="true">Coral</button><button class="seg" data-sub="ram" aria-pressed="false">Ram</button><button class="seg" data-sub="nautilus" aria-pressed="false">Nautilus</button><button class="seg" data-sub="bathy" aria-pressed="false">Bathyscaphe</button><button class="seg" data-sub="cray" aria-pressed="false">Crayfish</button><button class="seg" data-sub="titan" aria-pressed="false">Titan</button><button class="seg" data-sub="bunny" aria-pressed="false">Bunny</button><button class="seg" data-sub="rugby" aria-pressed="false">Rugby ball</button><button class="seg" data-sub="mic" aria-pressed="false">Sparkle mic</button><button class="seg" data-sub="santa" aria-pressed="false">Santa</button><button class="seg" data-sub="turtle" aria-pressed="false">Turtle (1775)</button><button class="seg" data-sub="alvin" aria-pressed="false">Research sub</button><button class="seg subMore" id="subMore" aria-expanded="false" aria-controls="subRow">More subs</button></div>
+          <label class="switch" id="calmRow"><input type="checkbox" id="calm"> Calm sea: the animals and visitors rest</label>
+        </details>
         <div class="row" style="margin-top:12px">
           <button class="btn" id="btnDaily">Today's descent</button>
           <button class="btn" id="btnFree">Free dive</button>
@@ -2175,13 +2194,15 @@ function renderMixPicks() {
   const offFor = (keep) => new Set(ids.filter((id) => keep.indexOf(id) < 0));
   const short = (g, t) => String(t).replace(new RegExp("^" + g.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s+", "i"), "");
   el.classList.remove("hide");
-  el.innerHTML = `<p class="lbl" style="margin:12px 0 6px">Choose the mix <span class="note">(a whole shelf, or just the packs you want from it)</span></p>
+  const what = cur === "*fam" ? "Family mix" : cur === "" ? "Everything" : cur ? (picks.length ? `${picks.length} ${esc(cur)} pack${picks.length === 1 ? "" : "s"}` : "All " + esc(cur)) : "a mix of shelves";
+  el.innerHTML = `<details class="mixbox"${store.get("mixOpen", false) ? " open" : ""}><summary>In the mix: <b>${what}</b></summary><p class="lbl" style="margin:12px 0 6px">Choose the mix <span class="note">(a whole shelf, or just the packs you want from it)</span></p>
     <div class="chips" role="group" aria-label="Shelves"><button class="seg mixfam" aria-pressed="${cur === "*fam"}">Family mix<small>${ids.length - famIds.length}</small></button><button class="seg mixall" data-all="1" aria-pressed="${cur === ""}">Everything<small>${ids.length}</small></button>${gs.map((g) => `<button class="seg mixgroup" data-g="${esc(g)}" aria-pressed="${cur === g}">${esc(g)}<small>${shelves[g].length}</small></button>`).join("")}</div>
     ${cur && shelves[cur] && shelves[cur].length > 1 ? `<div class="chips mixpacks" role="group" aria-label="Packs on the ${esc(cur)} shelf"><button class="seg mixwhole" aria-pressed="${!picks.length}">All ${esc(cur)}</button>${shelves[cur].map((id) => `<button class="seg mixpick" data-mix="${esc(id)}" aria-pressed="${picks.indexOf(id) >= 0}">${esc(short(cur, all[id].title))}</button>`).join("")}</div>
     <p class="note">${picks.length ? `Just ${picks.length === 1 ? "this pack" : "these " + picks.length}. Tap All ${esc(cur)} for the whole shelf.` : `All of ${esc(cur)}. Tap packs to play just those.`}</p>`
     : cur === null ? `<p class="note">This mix spans shelves (chosen before 16 Nov). Tap a shelf or Everything to choose again.</p>`
     : cur === "" ? `<p class="note">Every pack, exam packs included, one from each in turn. Tap a shelf to narrow it.</p>`
-    : cur === "*fam" ? `<p class="note">Every shelf except GCSE and A-level, one pack after another. Tap a shelf to narrow it.</p>` : ""}`;
+    : cur === "*fam" ? `<p class="note">Every shelf except GCSE and A-level, one pack after another. Tap a shelf to narrow it.</p>` : ""}</details>`;
+  el.querySelector("details").ontoggle = (e) => store.set("mixOpen", e.target.open);    // folded by default so the front stays short (14n); remembered once opened
   const again = (sel) => { const x = document.querySelector(sel); if (x) x.focus(); };
   el.querySelector(".mixall").onclick = () => { setMixOff(new Set()); again(".mixall"); };
   el.querySelector(".mixfam").onclick = () => { setMixOff(new Set(famIds)); again(".mixfam"); };
@@ -2678,19 +2699,23 @@ function renderPackList() {
   const shelves = Object.keys(counts).sort((a, b) => (a === "Samples") - (b === "Samples") || (a === "Other") - (b === "Other") || a.localeCompare(b));
   if (S.shelf && !counts[S.shelf]) S.shelf = "";
   const sh = $("shelves"); sh.classList.toggle("hide", shelves.length < 2);
-  sh.innerHTML = [["", "All", all.length]].concat(shelves.map((g) => [g, g, counts[g]])).map(([k, label, c]) => `<button class="seg" data-shelf="${esc(k)}" aria-pressed="${(S.shelf || "") === k}">${esc(label)}<small>${c}</small></button>`).join("");
+  sh.innerHTML = [["", "All shelves", all.length]].concat(shelves.map((g) => [g, g, counts[g]])).map(([k, label, c]) => `<button class="seg" data-shelf="${esc(k)}" aria-pressed="${(S.shelf || "") === k}">${esc(label)}<small>${c}</small></button>`).join("");
   sh.querySelectorAll(".seg").forEach((b) => b.onclick = () => { S.shelf = b.dataset.shelf; renderPackList(); const a = sh.querySelector(`[data-shelf="${CSS.escape(S.shelf)}"]`); if (a) a.focus(); });
   $("packSearch").classList.toggle("hide", all.length <= 12);
   $("packCount").textContent = all.length > 1 ? `${all.length} packs` : "";
-  const mk = mixKey(), ids = (mk && !S.shelf && (!q || "all packs mix everything".indexOf(q) >= 0) ? [mk] : []).concat(all.filter((id) => { const p = packs[id].pack; return (!S.shelf || shelfOf(p) === S.shelf) && (!q || (p.title + " " + (p.subtitle || "") + " " + shelfOf(p) + " " + searchWords(id, p)).toLowerCase().indexOf(q) >= 0); })
+  const index = !S.shelf && !q && shelves.length >= 2;      // one shelf at a time (14n): the front shows the mix, your pack and the shelves
+  if (index) sh.classList.add("hide");
+  const mk = mixKey(), ids = (mk && !S.shelf && (!q || "all packs mix everything".indexOf(q) >= 0) ? [mk] : []).concat(index ? (packs[S.packId] && packs[S.packId].from !== "mixed" ? [S.packId] : []) : all.filter((id) => { const p = packs[id].pack; return (q || !S.shelf || shelfOf(p) === S.shelf) && (!q || (p.title + " " + (p.subtitle || "") + " " + shelfOf(p) + " " + searchWords(id, p)).toLowerCase().indexOf(q) >= 0); })
     .sort((a, b) => (recent[b] || 0) - (recent[a] || 0) || (packs[a].pack.sample ? 1 : 0) - (packs[b].pack.sample ? 1 : 0) || String(packs[a].pack.title).localeCompare(String(packs[b].pack.title))));
   $("packList").classList.toggle("many", all.length + (mixKey() ? 1 : 0) > 4);
   $("packList").innerHTML = ids.length ? ids.map((id) => {
     const p = packs[id].pack, n = (p.questions || []).length, from = packs[id].from;
     return `<button class="pack" data-pack="${esc(id)}" aria-pressed="${id === S.packId}">${PackArt.svg(p)}<b>${esc(p.title)}${p.sample && !/sample/i.test(p.title) ? '<span class="tag">SAMPLE</span>' : ""}</b><small>${esc(p.subtitle || "")}</small><small>${n} questions${p.mixed ? " from " + p.packs.length + " packs" : all.length > 4 ? "" : from === "device" ? " · added on this device" : from === "shared" ? " · shared pack" : ""}</small></button>`;
-  }).join("") : `<p class="note">No pack matches that.</p>`;
+  }).join("") + (index ? shelves.map((g) => { const first = all.find((id) => shelfOf(packs[id].pack) === g);
+      return `<button class="pack shelftile" data-shelfgo="${esc(g)}">${first ? PackArt.svg(packs[first].pack) : ""}<b>${esc(g)}</b><small>${counts[g]} pack${counts[g] === 1 ? "" : "s"}</small></button>`; }).join("") : "") : `<p class="note">No pack matches that.</p>`;
+  $("packList").querySelectorAll(".shelftile").forEach((b) => b.onclick = () => { S.shelf = b.dataset.shelfgo; renderPackList(); const c = $("shelves").querySelector(`[data-shelf="${CSS.escape(S.shelf)}"]`); if (c) c.focus(); });
   if ($("mixPicks") || (packs[S.packId] && packs[S.packId].from === "mixed")) renderMixPicks();
-  $("packList").querySelectorAll(".pack").forEach((b) => b.onclick = () => { S.packId = b.dataset.pack; store.set("pack", S.packId); renderHome(); const again = [...$("packList").querySelectorAll(".pack")].find((x) => x.dataset.pack === S.packId); if (again) again.focus(); });
+  $("packList").querySelectorAll(".pack[data-pack]").forEach((b) => b.onclick = () => { S.packId = b.dataset.pack; store.set("pack", S.packId); renderHome(); const again = [...$("packList").querySelectorAll(".pack")].find((x) => x.dataset.pack === S.packId); if (again) again.focus(); });
 }
 $("packSearch").addEventListener("input", (e) => { S.packQ = e.target.value; renderPackList(); });
 
@@ -2705,7 +2730,7 @@ function renderHome() {
   $("name").value = S.name;
   if (!packs[S.packId] && isMix(S.packId) && mixKey()) S.packId = mixKey();
   if (!packs[S.packId]) S.packId = Object.keys(packs).sort((a, b) => (packs[a].pack.sample ? 1 : 0) - (packs[b].pack.sample ? 1 : 0) || a.localeCompare(b))[0];
-  renderPackList(); renderMixPicks();
+  renderPackList(); renderMixPicks(); drawTypes(); setSummary();
   const p = curPack(), st = DD.settingsOf(p);
   const T = theme(); useTheme();
   document.querySelectorAll(".seg[data-theme]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === T.id)));
@@ -2713,7 +2738,7 @@ function renderHome() {
   if ($("subMore").getAttribute("aria-expanded") !== "true") showSubs(false);
   $("lede").textContent = `${st.roundLength} questions a round. ${T.lede}`;
   $("btnFree").textContent = T.free;
-  $("packNote").textContent = `${st.roundLength} questions a round · ${st.timer ? st.seconds + " s each (" + st.shortSeconds + " s for written answers" + (st.formats.indexOf("clues") >= 0 ? ", " + st.clueSeconds + " s for clue by clue" : "") + ")" : "no time limit"} · formats: ${st.formats.map((f) => DD.FORMAT_NAMES[f]).join(", ")}` + (p.checked ? ` · facts checked ${p.checked}` : "");
+  $("packNote").textContent = `${p.title}: ${st.roundLength} questions a round, ${st.timer ? st.seconds + " s each" : "no time limit"}` + (p.checked ? ` · facts checked ${p.checked}` : "");   // the full timings and kinds live under Settings and "How the dive is scored" (14n)
   const played = store.get("played", {})[playedKey(p.id, S.dateKey, S.name)];
   $("btnDaily").disabled = !!played;
   $("btnDaily").textContent = !played && liveDaily() ? "Resume your " + T.go : T.today;
@@ -2739,11 +2764,42 @@ $("btnPractice").onclick = () => start("free", true);                 // no cloc
 /* the clock for free dives (ergonomic review, 16 Nov 2026): normal, relaxed (double time) or none; today's descent always uses the normal clock */
 function clockMode() { const c = store.get("clock", "normal"); return S.mode === "free" && (c === "relaxed" || c === "off") ? c : "normal"; }
 function drawClock() { const c = store.get("clock", "normal"); document.querySelectorAll(".seg[data-clock]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.clock === c))); }
-document.querySelectorAll(".seg[data-clock]").forEach((b) => b.onclick = () => { store.set("clock", b.dataset.clock); drawClock(); });
+document.querySelectorAll(".seg[data-clock]").forEach((b) => b.onclick = () => { store.set("clock", b.dataset.clock); drawClock(); setSummary(); });
+/* ---------- question types (14n, 16 Nov 2026): free dives and practice can use only some kinds of question, e.g. rare answers across every topic ---------- */
+const TYPE_NAMES = { rare: "Rare answer", choice: "Bet on it", number: "Closest number", order: "Put in order", clues: "Clue by clue", short: "Mark scheme" };
+function qTypes() { const t = store.get("qtypes", []); return Array.isArray(t) ? t.filter((k) => TYPE_NAMES[k]) : []; }
+function typedPack(p) {                       // the pack with only the chosen kinds of question (free dives and practice only)
+  const t = qTypes(); if (!t.length) return p;
+  const st = DD.settingsOf(p), f = st.formats.filter((k) => t.indexOf(k) >= 0);
+  return Object.assign({}, p, { questions: (p.questions || []).filter((q) => t.indexOf(q.format) >= 0), settings: Object.assign({}, p.settings || {}, { formats: f.length ? f : t }) });
+}
+function drawTypes() {
+  const t = qTypes(), p = curPack(), counts = {};
+  (p.questions || []).forEach((q) => { counts[q.format] = (counts[q.format] || 0) + 1; });
+  document.querySelectorAll(".seg[data-qtype]").forEach((b) => {
+    const k = b.dataset.qtype; b.setAttribute("aria-pressed", String(k ? t.indexOf(k) >= 0 : !t.length));
+    if (k) { let sm = b.querySelector("small"); if (!sm) { sm = document.createElement("small"); b.append(sm); } sm.textContent = String(counts[k] || 0); }
+  });
+  const n = t.reduce((a, k) => a + (counts[k] || 0), 0);
+  $("typeNote").textContent = !t.length ? "Free dives and practice use every kind of question. Pick one or more to play only those." :
+    n ? `${n} ${t.map((k) => TYPE_NAMES[k]).join(" and ").toLowerCase()} question${n === 1 ? "" : "s"} in ${p.title}. For free dives and practice; today's descent always uses every kind, so everyone plays the same round.` :
+    `${p.title} has no ${t.map((k) => TYPE_NAMES[k]).join(" or ").toLowerCase()} questions. Pick another pack, the Family mix, or another kind.`;
+}
+document.querySelectorAll(".seg[data-qtype]").forEach((b) => b.onclick = () => {
+  const k = b.dataset.qtype; let t = qTypes();
+  t = !k ? [] : t.indexOf(k) >= 0 ? t.filter((x) => x !== k) : t.concat(k);
+  store.set("qtypes", t); drawTypes(); setSummary();
+});
+function setSummary() {
+  const t = qTypes(), c = store.get("clock", "normal");
+  $("setSum").textContent = [t.length ? t.map((k) => TYPE_NAMES[k]).join(", ") + " only" : "All question types",
+    c === "off" ? "no clock" : c === "relaxed" ? "relaxed clock" : "normal clock", theme().id === "golf" ? "golf" : "dive",
+    ($("calm") && $("calm").checked) ? "calm sea" : ""].filter(Boolean).join(" · ");
+}
 drawClock();
 /* a calm sea: the animals and visitors rest, for anyone the movement bothers */
 $("calm").checked = !!store.get("calm", false); DiveScene.calm($("calm").checked);
-$("calm").onchange = () => { store.set("calm", $("calm").checked); DiveScene.calm($("calm").checked); };
+$("calm").onchange = () => { store.set("calm", $("calm").checked); DiveScene.calm($("calm").checked); setSummary(); };
 /* in a free dive the clock stops while the page is hidden (a call, another app); today's descent keeps running, so it stays fair */
 document.addEventListener("visibilitychange", () => {
   if (!Q || Q.locked || S.view !== "play" || S.mode !== "free" || !Q.end || clockMode() === "off") return;
@@ -2775,8 +2831,10 @@ function start(mode, untimed) {
   S.untimed = !!untimed;
   if (!S.name) { $("name").focus(); $("nameNote").textContent = "Type a display name first."; $("nameNote").classList.add("err"); return; }
   document.querySelectorAll(".vpop").forEach((x) => x.remove());
-  const p = curPack(); S.mode = mode; S.dateKey = DD.londonDate();
-  const rec = store.get("recent", {}); rec[p.id] = Date.now(); store.set("recent", rec);
+  const p0 = curPack(), p = mode === "free" ? typedPack(p0) : p0; S.mode = mode; S.dateKey = DD.londonDate();
+  if (!(p.questions || []).length) { $("setBox").open = true; drawTypes(); $("typeNote").classList.add("err"); $("typeNote").scrollIntoView({ block: "center" }); return; }
+  $("typeNote").classList.remove("err");
+  const rec = store.get("recent", {}); rec[p0.id] = Date.now(); store.set("recent", rec);
   S.seed = mode === "daily" ? p.id + "|" + S.dateKey : p.id + "|free|" + Date.now() + "|" + Math.random();
   const set = p.mixed ? DD.mixSet(p, mode === "daily" ? "daily|" + S.dateKey : S.seed) : mode === "daily" ? DD.dailySet(p, S.dateKey) : DD.pickSet(p, S.seed);
   S.qids = easeIn(set).map((q) => q.id); S.idx = 0; S.results = []; S.pend = null;
