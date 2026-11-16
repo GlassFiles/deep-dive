@@ -344,7 +344,7 @@ body:not([data-theme=golf]) .readout span{color:var(--ink)}
 /* the shelf chips wrap onto more lines instead of a sideways strip */
 @media (max-width:600px){.shelves{flex-wrap:wrap;overflow-x:visible}}
 /* the main button stays in view at the bottom of the screen on bet and order questions (it used to start below the screen); questions with a typed answer keep it in the flow, so the bar never covers the answer box, and Go on the keyboard locks the answer in */
-body:not(.typing) #qBody:not(:has(#ans)) .row:has(> #lock){position:sticky;bottom:0;z-index:5;margin:12px -14px -14px!important;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(rgba(3,18,28,0),rgba(3,18,28,.94) 28%);border-radius:0 0 14px 14px}
+body:not(.typing) #qBody:not(:has(#ans)) .row:has(> #lock){position:sticky;bottom:0;z-index:5;margin:12px -14px -14px!important;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#071d28;border-top:1px solid var(--line);box-shadow:0 -10px 18px rgba(0,0,0,.35);border-radius:0 0 14px 14px}
 /* a shorter depth window while a question is open on a phone, so more of the question fits */
 @media (max-width:600px){body[data-view=play] .win{height:clamp(96px,16vh,150px)}}
 @media (max-height:500px){body[data-view=play] .win{height:80px}}
@@ -363,6 +363,29 @@ body[data-view=play]:not(.typing) #vPlay{scroll-padding-bottom:calc(84px + env(s
 /* while typing a clue answer, the clues not yet opened step aside, and a long list scrolls inside itself (smallest phones) */
 body.typing .clues li.locked{display:none}
 body.typing #qBody:has(#clueList) .clues{max-height:calc(var(--vvh, 100vh) * .36);overflow-y:auto}
+/* re-check 16 Nov 2026 */
+/* N2: the pinned bar is solid (above), so a tap on the part of an option that shows lands on the option; N7: no gap under the bar */
+body[data-view=play]:not(.typing) #vPlay{padding-bottom:0}
+body[data-view=play]:not(.typing) #vPlay::after{content:"";display:block;height:28px}
+/* N3: the header is one short row on phones: "4 of 7", a small tag, and Leave */
+.qhead .short{display:none}
+@media (max-width:600px){
+  .qhead{flex-wrap:nowrap;padding:6px 8px;gap:8px}
+  .qhead .long,.qhead .qpack{display:none}.qhead .short{display:inline}
+  .qhead #qCount{white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .qhead #playNote{flex:0 1 auto;font-size:13px;white-space:nowrap}
+  .qhead #btnQuit{flex:none}
+}
+/* N5: a wrong pick shows its cross only, not the tick as well */
+.opt.wrong[aria-pressed=true]::before{content:none}
+/* the depth readout never runs off the screen */
+.readout b{max-width:calc(100vw - var(--gaugeW, 0px) - 48px);overflow:hidden;text-overflow:ellipsis}
+/* mark scheme while typing: the box and a small button side by side, so the button is above the keyboard (re-check: it was 4 px under it at 320) */
+body.typing #qBody:has(textarea#ans){display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px}
+body.typing #qBody:has(textarea#ans) > *{flex:1 1 100%}
+body.typing #qBody:has(textarea#ans) > textarea#ans,body.typing #qBody:has(textarea#ans) > .fuse{flex:1 1 0;min-width:0}
+body.typing #qBody:has(textarea#ans) > .row{flex:0 0 auto;margin:0!important}
+body.typing #qBody:has(textarea#ans) #lock{min-height:44px;padding:8px 14px;font-size:15px}
 
 </style>
 </head>
@@ -387,7 +410,9 @@ body.typing #qBody:has(#clueList) .clues{max-height:calc(var(--vvh, 100vh) * .36
             <input class="field" id="name" maxlength="24" autocomplete="nickname" placeholder="e.g. Captain Ram">
             <button class="btn go startbtn" id="btnStart"><span id="btnStartTxt">Start today's descent</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14M12 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>
-          <div class="row" style="margin-top:8px"><button class="btn" id="btnPractice">Practise first (free dive, no score)</button></div>
+          <div class="row" style="margin-top:8px"><button class="btn" id="btnPractice">Practise first (no clock, no score)</button></div>
+          <div class="row themes" id="clockRow" style="margin-top:10px" role="group" aria-label="The clock in free dives"><span class="note">Clock</span><button class="seg" data-clock="normal" aria-pressed="true">Normal</button><button class="seg" data-clock="relaxed" aria-pressed="false">Relaxed (double time)</button><button class="seg" data-clock="off" aria-pressed="false">No clock</button></div>
+          <p class="note" id="clockNote" style="margin:-4px 0 10px">For free dives. Today's descent always uses the normal clock, so everyone's score is fair.</p>
           <p class="note" id="startNote" style="margin-top:8px"></p>
           <p class="note" id="nameNote" style="margin-top:2px" aria-live="polite">Just a name for the scoreboard. No login. Your name and your dives stay in this browser (and on the scoreboard, if you use it).</p>
         </div>
@@ -402,8 +427,6 @@ body.typing #qBody:has(#clueList) .clues{max-height:calc(var(--vvh, 100vh) * .36
         <p class="note" id="packNote" style="margin-top:10px"></p>
         <div class="row themes" role="group" aria-label="How your score moves"><span class="note">Play as</span><button class="seg" data-theme="dive" aria-pressed="true">Dive</button><button class="seg" data-theme="golf" aria-pressed="false">Golf</button></div>
         <div class="row themes" id="subRow" role="group" aria-label="Your submarine"><span class="note">Your sub</span><button class="seg" data-sub="coral" aria-pressed="true">Coral</button><button class="seg" data-sub="ram" aria-pressed="false">Ram</button><button class="seg" data-sub="nautilus" aria-pressed="false">Nautilus</button><button class="seg" data-sub="bathy" aria-pressed="false">Bathyscaphe</button><button class="seg" data-sub="cray" aria-pressed="false">Crayfish</button><button class="seg" data-sub="titan" aria-pressed="false">Titan</button><button class="seg" data-sub="bunny" aria-pressed="false">Bunny</button><button class="seg" data-sub="rugby" aria-pressed="false">Rugby ball</button><button class="seg" data-sub="mic" aria-pressed="false">Sparkle mic</button><button class="seg" data-sub="santa" aria-pressed="false">Santa</button><button class="seg" data-sub="turtle" aria-pressed="false">Turtle (1775)</button><button class="seg" data-sub="alvin" aria-pressed="false">Research sub</button><button class="seg subMore" id="subMore" aria-expanded="false" aria-controls="subRow">More subs</button></div>
-        <div class="row themes" id="clockRow" role="group" aria-label="The clock in free dives"><span class="note">Clock</span><button class="seg" data-clock="normal" aria-pressed="true">Normal</button><button class="seg" data-clock="relaxed" aria-pressed="false">Relaxed (double time)</button><button class="seg" data-clock="off" aria-pressed="false">No clock</button></div>
-        <p class="note" id="clockNote" style="margin:-4px 0 10px">For free dives. Today's descent always uses the normal clock, so everyone's score is fair.</p>
         <label class="switch" id="calmRow"><input type="checkbox" id="calm"> Calm sea: the animals and visitors rest</label>
         <div class="row" style="margin-top:12px">
           <button class="btn" id="btnDaily">Today's descent</button>
@@ -580,11 +603,11 @@ var DD = (function () {
   /* a short answer (4 to 6 letters) one slip away from exactly one listed answer, and no closer to a known wrong one:
      the player is asked "Did you mean ...?" rather than given it outright, so Cork is never quietly taken for York */
   function nearTier(q, answer) {
-    var a = squash(answer); if (a.length < 4) return null;
+    var a = squash(answer); if (a.length < 3) return null;            // 3 typed letters only for a 4-letter-or-longer entry ("Zic" for Zinc; re-check 16 Nov)
     var hits = [];
     (q.tiers || []).forEach(function (tier, t) {
       (tier || []).forEach(function (entry) {
-        aliases(entry).forEach(function (al) { var b = squash(al); if (b && Math.min(a.length, b.length) < 7 && edits(a, b) === 1) hits.push({ tier: t + 1, matched: display(entry) }); });
+        aliases(entry).forEach(function (al) { var b = squash(al); if (b && Math.max(a.length, b.length) >= 4 && Math.min(a.length, b.length) < 7 && edits(a, b) === 1) hits.push({ tier: t + 1, matched: display(entry) }); });
       });
     });
     var uniq = {}; hits.forEach(function (h) { uniq[h.matched] = h; });
@@ -2577,7 +2600,8 @@ function setGauge(m) { gaugeDepth = m; drawGauge(); }
 /* ---------- the descent: scene, gauge and readout move together ---------- */
 let zoneShown = "", lastReadM = 0, holdZone = 0;
 function readout(m, owed) {
-  $("winDepth").textContent = owed > 0 ? fmtM(owed) + " to make up" : fmtM(Math.max(0, Math.round(m / 10) * 10));
+  $("winDepth").textContent = owed > 0 ? "−" + fmtM(owed) : fmtM(Math.max(0, Math.round(m / 10) * 10));
+  if (owed > 0) { const t = "to make up, at the surface"; if (zoneShown !== t) { $("winZone").textContent = t; zoneShown = t; } lastReadM = m; return; }   // the long words on the small line, so the big line never runs off a phone (re-check N1)
   const lm = S.view !== "home" && m > lastReadM ? DiveScene.landmarkBetween(lastReadM, m) : null; lastReadM = m;
   if (lm) { const el = $("winZone"); el.textContent = lm.call; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); zoneShown = el.textContent; holdZone = Date.now() + 2600; return; }
   if (Date.now() < holdZone) return;
@@ -2711,7 +2735,7 @@ $("tabToday").onclick = () => { cap.boardTab = "today"; $("tabToday").setAttribu
 $("tabBest").onclick = () => { cap.boardTab = "best"; $("tabBest").setAttribute("aria-pressed", "true"); $("tabToday").setAttribute("aria-pressed", "false"); renderBoard($("board"), S.packId, "best"); };
 $("btnDaily").onclick = () => { const l = liveDaily(); if (l) { S = Object.assign(S, l); show("play"); ask(); } else start("daily"); };
 $("btnFree").onclick = () => start("free");
-$("btnPractice").onclick = () => start("free");
+$("btnPractice").onclick = () => start("free", true);                 // no clock at all, whatever the Clock setting (re-check E01)
 /* the clock for free dives (ergonomic review, 16 Nov 2026): normal, relaxed (double time) or none; today's descent always uses the normal clock */
 function clockMode() { const c = store.get("clock", "normal"); return S.mode === "free" && (c === "relaxed" || c === "off") ? c : "normal"; }
 function drawClock() { const c = store.get("clock", "normal"); document.querySelectorAll(".seg[data-clock]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.clock === c))); }
@@ -2737,16 +2761,18 @@ $("btnRemove").onclick = () => {
 $("btnAgain").onclick = () => start("free");
 $("btnHome").onclick = renderHome;
 let quitArmed = 0;
+function quitText() { $("btnQuit").innerHTML = `<span class="long">${esc(theme().leave)}</span><span class="short">Leave</span>`; }
 $("btnQuit").onclick = () => {
-  if (Date.now() - quitArmed > 4000) { quitArmed = Date.now(); $("btnQuit").textContent = S.mode === "daily" ? "Tap again: today's " + theme().go + " ends here, the rest score nothing" : S.mode === "party" ? "Tap again to leave the party" : "Tap again to leave"; setTimeout(() => { $("btnQuit").textContent = theme().leave; }, 4000); return; }
-  clearInterval(tick); $("btnQuit").textContent = theme().leave; quitArmed = 0;
+  if (Date.now() - quitArmed > 4000) { quitArmed = Date.now(); $("btnQuit").textContent = S.mode === "daily" ? "Tap again: today's " + theme().go + " ends here, the rest score nothing" : S.mode === "party" ? "Tap again to leave the party" : "Tap again to leave"; setTimeout(() => { quitText(); }, 4000); return; }
+  clearInterval(tick); quitText(); quitArmed = 0;
   if (S.mode === "party") { leaveParty(); renderHome(); } else if (S.mode === "daily") finish(); else { store.set("live", null); renderHome(); }
 };
 function liveDaily() { const l = store.get("live", null); return l && l.mode === "daily" && l.view === "play" && l.packId === S.packId && (l.name || "").toLowerCase() === S.name.toLowerCase() ? l : null; }
 document.addEventListener("visibilitychange", () => { if (!document.hidden && S.view === "home" && S.dateKey !== DD.londonDate()) renderHome(); });
 
 /* ---------- a dive ---------- */
-function start(mode) {
+function start(mode, untimed) {
+  S.untimed = !!untimed;
   if (!S.name) { $("name").focus(); $("nameNote").textContent = "Type a display name first."; $("nameNote").classList.add("err"); return; }
   document.querySelectorAll(".vpop").forEach((x) => x.remove());
   const p = curPack(); S.mode = mode; S.dateKey = DD.londonDate();
@@ -2755,7 +2781,7 @@ function start(mode) {
   const set = p.mixed ? DD.mixSet(p, mode === "daily" ? "daily|" + S.dateKey : S.seed) : mode === "daily" ? DD.dailySet(p, S.dateKey) : DD.pickSet(p, S.seed);
   S.qids = easeIn(set).map((q) => q.id); S.idx = 0; S.results = []; S.pend = null;
   const best = bestFor(p.id); gaugeGhost = best;
-  show("play"); $("btnQuit").textContent = theme().leave;
+  show("play"); quitText();
   if (theme().id === "golf") { GolfScene.home(); golfReadout(0, "On the tee"); } else { DiveScene.set(-16); zoneShown = ""; descend(0, 1100); }
   ask();
 }
@@ -2820,7 +2846,8 @@ function drawClues(all) {
 /* a short answer one letter away from a listed one: ask, as clue by clue does (ergonomic review, 16 Nov 2026) */
 function nearRuling(q, raw, res, st) {
   const m = res.near.matched;
-  reveal(`<h3>Did you mean ${esc(m)}?</h3><p class="note">"${esc(raw)}" is one letter away from ${esc(m)}. If that is what you meant, it counts.</p><div class="row"><button class="btn go" id="nearYes">Yes, I meant ${esc(m)}</button><button class="btn" id="nearNo">No, I meant what I typed</button></div>`);
+  reveal(`<h3>Did you mean ${esc(m)}?</h3><p class="note">"${esc(raw)}" is one letter away from ${esc(m)}. If that is what you meant, it counts.</p><div class="row"><button class="btn go" id="nearYes">Yes, I meant ${esc(m)}</button><button class="btn" id="nearNo">No, I meant what I typed</button></div>`, true);
+  requestAnimationFrame(() => { const r = $("qReveal"); if (r && S.view === "play") r.scrollIntoView({ block: "nearest", behavior: DiveScene.still() ? "auto" : "smooth" }); });   // Yes/No in view (re-check N4)
   $("nearYes").onclick = () => settle(q, DD.scoreRare(q, raw, { own: true }), raw, "a one-letter slip, counted on your word");
   $("nearNo").onclick = () => { Q.nearAsked = true; Q.locked = false; lock(false, true); };
   setTimeout(() => { const b = $("nearYes"); if (b) b.focus({ preventScroll: true }); }, 0);
@@ -2841,7 +2868,7 @@ function ask() {
   if (!q) return finish();
   const pend = S.pend && S.pend.idx === S.idx && S.pend.qid === q.id ? S.pend : null;
   Q = { q, seen: Math.max(1, Math.min((q.clues || []).length || 1, pend && pend.seen ? pend.seen : 1)), locked: false, touched: pend ? !!pend.touched : false, pick: pend && pend.pick != null ? pend.pick : null, bet: pend && pend.bet ? pend.bet : 1, order: pend && pend.order ? pend.order.slice() : null, ticks: [] };
-  $("qCount").textContent = `Question ${S.idx + 1} of ${n()} · ${p.title}${q.from ? " · from " + q.from : ""}`;
+  $("qCount").innerHTML = `<span class="long">Question </span>${S.idx + 1} of ${n()}<span class="qpack"> · ${esc(p.title)}</span>${q.from ? " · from " + esc(q.from) : ""}`;
   $("depthNow").textContent = theme().id === "golf" ? fmtYd(totalOf(S.results.map((r) => r.points), n())) : depthLabel(depthSoFar());
   $("vPlay").scrollTop = 0;
   if (theme().id === "golf") { if (!GolfScene.busy()) { GolfScene.setShots(shotsSoFar()); golfReadout(totalOf(S.results.map((r) => r.points), n()), `Drive ${S.idx + 1} of ${n()}`); } }
@@ -2849,7 +2876,9 @@ function ask() {
   $("qFormat").textContent = DD.FORMAT_NAMES[q.format];
   $("qPrompt").innerHTML = rich(q.prompt);
   $("qReveal").classList.add("hide"); $("qReveal").innerHTML = "";
-  $("playNote").textContent = S.mode === "party" ? "Party: answer before the time runs out." : S.mode === "daily" ? theme().today + ": this one counts." : theme().free + ": practice, not on the scoreboard.";
+  const note = S.mode === "party" ? (P.noClock ? ["Party: answer, then wait for the host.", "Party"] : ["Party: answer before the time runs out.", "Party"])
+    : S.mode === "daily" ? [theme().today + ": this one counts.", "Counts today"] : [theme().free + (S.untimed ? ": practice, no clock, not on the scoreboard." : ": practice, not on the scoreboard."), "Practice"];
+  $("playNote").innerHTML = `<span class="long">${esc(note[0])}</span><span class="short">${esc(note[1])}</span>`;
   const body = $("qBody"), mpp = theme().per(n()), F = theme().fmt;
   if (q.format === "rare") {
     body.innerHTML = `<label class="lbl" for="ans">Your answer</label><input class="field" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-describedby="qPrompt" placeholder="${theme().hint}"><div class="row" style="margin-top:12px"><button class="btn go" id="lock">${theme().act}</button></div>`;
@@ -2893,15 +2922,15 @@ function ask() {
   setGauge(depthSoFar());
   snapshot();
   if (pend && pend.phase === "locked") { lock(!!pend.timedOut, true); return; }
-  startTimer(end, secs, st.timer && clockMode() !== "off" && !(S.mode === "party" && P.noClock));
+  startTimer(end, secs, st.timer && clockMode() !== "off" && !(S.mode === "party" && P.noClock) && !(S.mode === "free" && S.untimed));
 }
 function firstWord(label) { label = label || "first to last"; const m = label.match(/^(\w+)\s+first$/i); return m ? m[1][0].toUpperCase() + m[1].slice(1) + " (first)" : "First"; }
 function lastWord(label) { const opp = { earliest: "Latest", lowest: "Highest", smallest: "Largest", largest: "Smallest", highest: "Lowest", first: "Last", oldest: "Newest", fewest: "Most", most: "Fewest" }; const m = (label || "").match(/^(\w+)\s+first$/i); return m && opp[m[1].toLowerCase()] ? opp[m[1].toLowerCase()] + " (last)" : "Last"; }
 /* put in order: each item keeps its own shade (lightest where it started at the top, darkest at the bottom), so a moved item shows;
    rows slide when they swap; drag by the grip (or anywhere with a mouse), or use the arrows */
 function orderShade(rank, n) {
-  const t = n > 1 ? rank / (n - 1) : 0, L = Math.round(90 - t * 66), hue = Math.round(172 + t * 42);
-  const dark = L >= 44;                                                     // dark ink from 44% lightness, so every shade reaches 4.5:1 (ergonomic review: 46% failed at 3.43)
+  const t = n > 1 ? rank / (n - 1) : 0, L0 = Math.round(90 - t * 66), L = L0 > 40 && L0 < 49 ? 49 : L0, hue = Math.round(172 + t * 42);   // no shade in the 41-48% band, where neither ink reaches 4.5:1 (re-check E07)
+  const dark = L >= 45;                                                     // dark ink from 44% lightness, so every shade reaches 4.5:1 (ergonomic review: 46% failed at 3.43)
   return `--bg:hsl(${hue} 58% ${L}%);--ink:${dark ? "#06222e" : "#eaf7f8"};--bd:${dark ? "rgba(6,34,46,.28)" : "rgba(234,247,248,.3)"}`;
 }
 function rowTops(ol) { const m = {}; ol.querySelectorAll("li").forEach((li) => { m[li.dataset.ix] = li.getBoundingClientRect().top; }); return m; }
@@ -3172,7 +3201,7 @@ function numberScale(q, g) {
   return `<div class="scale" aria-hidden="true"><span style="left:${c(pos(a))}%">answer</span><i class="a" style="left:${c(pos(a))}%"></i><i class="g" style="left:${c(pos(g))}%"></i></div><p class="note">Coral dot: your guess. The bar ends where an answer stops scoring.</p>`;
 }
 /* a one-line copy of the question sits above the answer, because the reveal scrolls the question away on a phone (ergonomic review E24) */
-function reveal(h) { const r = $("qReveal"), qt = ($("qPrompt") ? $("qPrompt").textContent : "").trim(); r.classList.remove("hide"); r.innerHTML = (qt && S.view === "play" ? `<p class="qecho" aria-hidden="true">${esc(qt)}</p>` : "") + h; }
+function reveal(h, noEcho) { const r = $("qReveal"), qt = ($("qPrompt") ? $("qPrompt").textContent : "").trim(); r.classList.remove("hide"); r.innerHTML = (qt && S.view === "play" && !noEcho ? `<p class="qecho" aria-hidden="true">${esc(qt)}</p>` : "") + h; }
 
 /* ---------- Claude as judge (only where this page can ask it) ---------- */
 function firstJson(text) { const m = String(text || "").match(/\{[\s\S]*\}/); if (!m) return null; try { return JSON.parse(m[0]); } catch (e) { return null; } }
