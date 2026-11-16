@@ -887,6 +887,42 @@ var DiveScene = (function () {
   var snow = [], bubbles = [], creatures = [], seed = 11;
   var visitOn = false, visitor = null, nextVisit = 0, nextPuff = 0;     // home page only: now and then another sub from the fleet cruises past behind yours (Guy, 16 Nov 2026)
   function rnd() { seed = seed * 16807 % 2147483647; return seed / 2147483647; }
+  /* the day's weather over the sea (Guy, 16 Nov 2026): the same for everyone on a UK date, not a forecast; ?weather=sun|cloud|rain|snow to see one */
+  var WEATHER = (function () {
+    var q = ""; try { q = new URLSearchParams(location.search).get("weather") || ""; } catch (e) { q = ""; }
+    if (/^(sun|cloud|rain|snow)$/.test(q)) return q;
+    var d = new Date(), key = "", m = 1, h = 7;
+    try { key = d.toLocaleDateString("en-GB", { timeZone: "Europe/London" }); m = Number(d.toLocaleDateString("en-GB", { timeZone: "Europe/London", month: "numeric" })); } catch (e) { key = d.toDateString(); m = d.getMonth() + 1; }
+    for (var i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+    var pool = (m >= 11 || m <= 3) ? ["sun", "cloud", "cloud", "rain", "rain", "snow"] : ["sun", "sun", "sun", "cloud", "cloud", "rain"];
+    return pool[h % pool.length];
+  })();
+  var SKIES = { sun: [205, 240, 243], cloud: [214, 228, 232], rain: [172, 186, 194], snow: [204, 212, 218] };
+  var CLOUDS = []; (function () { var s2 = 97; function r2() { s2 = s2 * 16807 % 2147483647; return s2 / 2147483647; } for (var i = 0; i < 8; i++) CLOUDS.push({ x: r2(), y: 0.12 + r2() * 0.45, s: 0.7 + r2() * 0.8, v: 0.004 + r2() * 0.006 }); })();
+  function weather(surf, t) {
+    if (surf < 8) return;
+    var tt = still ? 0 : t, i, n = WEATHER === "sun" ? 3 : WEATHER === "cloud" ? 6 : 8;
+    if ((WEATHER === "sun" || WEATHER === "cloud") && surf > 50) {                           // the sun, with a soft glow
+      var sx = W * 0.84, sy2 = surf * 0.32, g = cx.createRadialGradient(sx, sy2, 4, sx, sy2, 60);
+      g.addColorStop(0, "rgba(255,244,200,.9)"); g.addColorStop(1, "rgba(255,244,200,0)"); cx.fillStyle = g; cx.beginPath(); cx.arc(sx, sy2, 60, 0, 6.283); cx.fill();
+      cx.fillStyle = "#fff3c4"; cx.beginPath(); cx.arc(sx, sy2, 18, 0, 6.283); cx.fill();
+    }
+    var col = WEATHER === "rain" ? "rgba(140,152,160,.9)" : WEATHER === "snow" ? "rgba(230,234,238,.95)" : "rgba(255,255,255,.92)";
+    for (i = 0; i < n; i++) {                                                                  // clouds drifting across
+      var c = CLOUDS[i], cxp = ((c.x + tt / 1000 * c.v * 0.3) % 1.3) * W * 1.0 - W * 0.15, cyp = surf * c.y, k = c.s * Math.min(1.4, Math.max(0.6, surf / 160));
+      cx.fillStyle = col; cx.beginPath(); cx.arc(cxp, cyp, 16 * k, 0, 6.283); cx.arc(cxp + 18 * k, cyp - 8 * k, 20 * k, 0, 6.283); cx.arc(cxp + 40 * k, cyp, 15 * k, 0, 6.283); cx.arc(cxp + 20 * k, cyp + 5 * k, 16 * k, 0, 6.283); cx.fill();
+    }
+    if (WEATHER === "rain") {                                                                  // rain, and rings where it lands
+      cx.strokeStyle = "rgba(110,130,145,.55)"; cx.lineWidth = 1.2;
+      for (i = 0; i < 70; i++) { var rx = (i * 137.5) % W, ry = ((i * 53 + tt * 0.9) % (surf + 30)) - 15; if (ry < surf - 2) { cx.beginPath(); cx.moveTo(rx, ry); cx.lineTo(rx - 3, ry + 11); cx.stroke(); } }
+      cx.strokeStyle = "rgba(255,255,255,.55)"; cx.lineWidth = 1;
+      for (i = 0; i < 9; i++) { var ph = ((tt / 700 + i * 0.37) % 1), ringX = ((i * 211 + Math.floor(tt / 700 + i * 0.37) * 97) % W); cx.globalAlpha = 1 - ph; cx.beginPath(); cx.ellipse(ringX, surf + 3, 2 + ph * 12, 1 + ph * 3, 0, 0, 6.283); cx.stroke(); }
+      cx.globalAlpha = 1;
+    } else if (WEATHER === "snow") {                                                           // snow, melting as it reaches the sea
+      cx.fillStyle = "rgba(255,255,255,.95)";
+      for (i = 0; i < 60; i++) { var fy = ((i * 41 + tt * 0.035 * (1 + i % 3)) % (surf + 20)) - 10, fx = (i * 89.3) % W + Math.sin(tt / 900 + i) * 10; if (fy < surf) { cx.beginPath(); cx.arc(fx, fy, 1.2 + (i % 3) * 0.6, 0, 6.283); cx.fill(); } }
+    }
+  }
   function frac(m) {
     if (m <= 0) return 0;
     m = Math.min(11000, m);
@@ -955,7 +991,11 @@ var DiveScene = (function () {
   function cast() {
     creatures = [];
     function add(type, d, x, s, v) { creatures.push({ type: type, d: d, x: x, s: s, v: v || 0, ph: rnd() * 6.28 }); }
-    for (var i = 0; i < 3; i++) add("school", 25 + i * 55, rnd(), 1, 0.012 + rnd() * 0.01);
+    for (var i = 0; i < 3; i++) add("school", 25 + i * 55, rnd(), 1, (i % 2 ? -1 : 1) * (0.012 + rnd() * 0.01));
+    add("shoal", 60, rnd(), 1, -0.016); add("shoal", 140, rnd(), 1.1, 0.014);                   // bigger shoals, swimming as one (Guy, 16 Nov 2026)
+    add("whale", 45, 0.15, 1.6, 0.004); add("whale", 180, 0.7, 1.9, -0.003);                     // humpbacks feed near the surface and dive to a few hundred metres
+    add("manta", 35, 0.6, 1.1, -0.008); add("manta", 110, 0.25, 1.3, 0.006);                      // manta rays: kite-shaped, mostly in the top 120 m
+    add("nautilus", 320, 0.45, 1, 0.003); add("nautilus", 560, 0.85, 0.9, -0.002);                // the chambered nautilus lives about 100 to 700 m down
     add("jelly", 260, 0.18, 1.1, 0.002); add("jelly", 420, 0.8, 0.8, -0.002); add("lantern", 520, 0.65, 1, -0.01); add("jelly", 780, 0.3, 1.3, 0.001);
     add("lantern", 900, 0.15, 0.9, 0.012); add("angler", 1600, 0.78, 1.2, -0.004); add("squid", 2400, 0.2, 1.3, 0.006);
     add("glow", 3000, 0.7, 1, 0); add("angler", 3500, 0.25, 0.9, 0.003); add("dumbo", 4500, 0.75, 1, -0.003);
@@ -990,8 +1030,50 @@ var DiveScene = (function () {
     g.addColorStop(0, "rgba(" + col + "," + a + ")"); g.addColorStop(1, "rgba(" + col + ",0)");
     cx.fillStyle = g; cx.beginPath(); cx.arc(x, y, r, 0, 6.283); cx.fill();
   }
+  /* bigger animals, drawn facing right at (0,0) and mirrored for the other way; also used by the visitors on the home page */
+  function beast(type, x, y, s, dir, t, ph) {
+    var k, sw = Math.sin(t / 520 + (ph || 0));
+    cx.save(); cx.translate(x, y); cx.scale(dir * s, s);
+    if (type === "whale") {                                               // a humpback: long dark body, long white flippers, flukes that beat
+      cx.fillStyle = "rgba(38,58,74,.9)"; cx.beginPath(); cx.moveTo(46, 2); cx.quadraticCurveTo(40, -14, 10, -13); cx.quadraticCurveTo(-30, -11, -46, -2); cx.quadraticCurveTo(-30, 8, 10, 11); cx.quadraticCurveTo(38, 12, 46, 2); cx.fill();
+      cx.save(); cx.translate(-46, -2); cx.rotate(sw * 0.25); cx.beginPath(); cx.moveTo(0, 0); cx.quadraticCurveTo(-8, -12, -16, -14); cx.quadraticCurveTo(-10, -2, -16, 12); cx.quadraticCurveTo(-8, 10, 0, 0); cx.fill(); cx.restore();   // flukes
+      cx.fillStyle = "rgba(205,222,228,.75)"; cx.save(); cx.translate(18, 6); cx.rotate(0.55 + sw * 0.15); cx.beginPath(); cx.ellipse(-10, 0, 17, 3.2, 0, 0, 6.283); cx.fill(); cx.restore();   // long pale flipper
+      cx.strokeStyle = "rgba(160,185,195,.45)"; cx.lineWidth = 1; for (k = 0; k < 5; k++) { cx.beginPath(); cx.moveTo(40 - k * 3, 4 + k * 1.2); cx.lineTo(12 - k * 4, 8 + k * 0.5); cx.stroke(); }   // throat grooves
+      cx.fillStyle = "rgba(10,20,26,.9)"; cx.beginPath(); cx.arc(32, -1, 1.4, 0, 6.283); cx.fill();
+    } else if (type === "manta") {                                        // a manta ray, seen from above: a kite with slow wing beats and a thin tail
+      var f = sw * 6;
+      cx.fillStyle = "rgba(30,44,58,.85)"; cx.beginPath(); cx.moveTo(22, 0); cx.quadraticCurveTo(6, -6, -2, -30 - f); cx.quadraticCurveTo(-8, -8, -16, 0); cx.quadraticCurveTo(-8, 8, -2, 30 + f); cx.quadraticCurveTo(6, 6, 22, 0); cx.fill();
+      cx.beginPath(); cx.moveTo(20, -4); cx.lineTo(27, -7); cx.lineTo(22, -1); cx.fill(); cx.beginPath(); cx.moveTo(20, 4); cx.lineTo(27, 7); cx.lineTo(22, 1); cx.fill();   // the head fins
+      cx.strokeStyle = "rgba(30,44,58,.8)"; cx.lineWidth = 1.2; cx.beginPath(); cx.moveTo(-16, 0); cx.quadraticCurveTo(-30, sw * 3, -42, 0); cx.stroke();
+      cx.fillStyle = "rgba(220,235,240,.35)"; cx.beginPath(); cx.ellipse(4, 0, 6, 3, 0, 0, 6.283); cx.fill();
+    } else if (type === "nautilus") {                                     // the chambered nautilus: a striped coiled shell, a hood and short tentacles
+      cx.fillStyle = "rgba(244,232,214,.85)"; cx.beginPath(); cx.arc(-4, 0, 14, 0, 6.283); cx.fill();
+      cx.strokeStyle = "rgba(170,90,50,.75)"; cx.lineWidth = 2.2; for (k = 0; k < 5; k++) { cx.beginPath(); cx.arc(-4, 0, 13.5, Math.PI * (0.55 + k * 0.17), Math.PI * (0.62 + k * 0.17)); cx.stroke(); }   // the tiger stripes
+      cx.strokeStyle = "rgba(150,110,80,.6)"; cx.lineWidth = 1.2; cx.beginPath(); for (k = 0; k <= 40; k++) { var a = k / 40 * 9, r = 1 + k * 0.28; var px = -4 + Math.cos(a) * r, py = Math.sin(a) * r; k ? cx.lineTo(px, py) : cx.moveTo(px, py); } cx.stroke();   // the coil
+      cx.fillStyle = "rgba(200,150,120,.8)"; cx.beginPath(); cx.ellipse(10, 2, 6, 7, 0, 0, 6.283); cx.fill();
+      cx.strokeStyle = "rgba(220,170,140,.7)"; cx.lineWidth = 1; for (k = -2; k <= 2; k++) { cx.beginPath(); cx.moveTo(14, 3 + k * 1.5); cx.quadraticCurveTo(20, 4 + k * 3 + sw * 2, 25, 5 + k * 4); cx.stroke(); }
+      cx.fillStyle = "rgba(20,10,10,.85)"; cx.beginPath(); cx.arc(11, -1, 1.3, 0, 6.283); cx.fill();
+    } else if (type === "ammonite") {                                     // an ammonite (gone for 66 million years): a ribbed spiral shell, tentacles from the opening
+      cx.strokeStyle = "rgba(196,150,96,.9)"; cx.lineWidth = 3; cx.beginPath(); for (k = 0; k <= 60; k++) { var a2 = k / 60 * 12.5, r2 = 1.5 + k * 0.27; var qx = Math.cos(a2) * r2, qy = Math.sin(a2) * r2; k ? cx.lineTo(qx, qy) : cx.moveTo(qx, qy); } cx.stroke();
+      cx.strokeStyle = "rgba(120,80,40,.6)"; cx.lineWidth = 1; for (k = 0; k < 18; k++) { var a3 = k / 18 * 6.283, r3 = 12; cx.beginPath(); cx.moveTo(Math.cos(a3) * (r3 - 3), Math.sin(a3) * (r3 - 3)); cx.lineTo(Math.cos(a3) * (r3 + 3), Math.sin(a3) * (r3 + 3)); cx.stroke(); }   // ribs
+      cx.strokeStyle = "rgba(200,150,120,.75)"; for (k = -2; k <= 2; k++) { cx.beginPath(); cx.moveTo(15, 8 + k); cx.quadraticCurveTo(22, 10 + k * 2 + sw * 2, 28, 12 + k * 3); cx.stroke(); }
+    } else if (type === "mosasaur") {                                     // a mosasaur (a sea reptile of the dinosaurs' time): long jaws, four paddles, a shark-like tail
+      cx.fillStyle = "rgba(62,84,74,.9)"; cx.beginPath(); cx.moveTo(60, 0); cx.lineTo(40, -6); cx.quadraticCurveTo(10, -14, -30, -7); cx.quadraticCurveTo(-55, -3, -66, 0); cx.quadraticCurveTo(-55, 5, -30, 8); cx.quadraticCurveTo(10, 12, 40, 4); cx.closePath(); cx.fill();
+      cx.save(); cx.translate(-64, 0); cx.rotate(sw * 0.3); cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(-10, -16); cx.lineTo(-6, 0); cx.lineTo(-12, 9); cx.closePath(); cx.fill(); cx.restore();   // tail fluke
+      cx.save(); cx.translate(22, 7); cx.rotate(0.6 + sw * 0.25); cx.beginPath(); cx.ellipse(-6, 0, 10, 3, 0, 0, 6.283); cx.fill(); cx.restore();   // front paddle
+      cx.save(); cx.translate(-18, 7); cx.rotate(0.5 - sw * 0.25); cx.beginPath(); cx.ellipse(-5, 0, 8, 2.6, 0, 0, 6.283); cx.fill(); cx.restore();   // back paddle
+      cx.fillStyle = "rgba(190,205,190,.55)"; cx.beginPath(); cx.moveTo(58, 1); cx.quadraticCurveTo(20, 9, -20, 6); cx.quadraticCurveTo(20, 4, 58, 1); cx.fill();   // pale belly
+      cx.strokeStyle = "rgba(235,235,220,.8)"; cx.lineWidth = 1; for (k = 0; k < 5; k++) { cx.beginPath(); cx.moveTo(56 - k * 4, -1); cx.lineTo(55 - k * 4, 1.5); cx.stroke(); }   // teeth
+      cx.fillStyle = "rgba(240,210,90,.9)"; cx.beginPath(); cx.arc(36, -3, 1.6, 0, 6.283); cx.fill();
+    } else if (type === "shoal") {                                        // a shoal of small fish turning together
+      cx.restore(); cx.save(); cx.translate(x, y);
+      for (k = 0; k < 22; k++) { var fx = Math.cos(k * 2.39) * (8 + (k % 7) * 6) + Math.sin(t / 900 + k * 0.4) * 5, fy = Math.sin(k * 2.39) * (5 + (k % 5) * 3.5) + Math.cos(t / 700 + k) * 3; fish(fx * s, fy * s, 0.7 * s, "rgba(225,245,250,.6)", dir); }
+    }
+    cx.restore();
+  }
   function creature(c, x, y, t) {
     var s = c.s * Math.max(0.75, Math.min(1.3, W / 700)), dir = c.v >= 0 ? 1 : -1, k;
+    if (c.type === "whale" || c.type === "manta" || c.type === "nautilus" || c.type === "shoal") { beast(c.type, x, y, s, dir, t, c.ph); return; }
     if (c.type === "school") {
       for (k = 0; k < 9; k++) fish(x + ((k * 37) % 70) - 35 + Math.sin(t / 700 + k) * 3, y + ((k * 23) % 30) - 15, 0.9 * s, "rgba(225,248,250,.55)", dir);
     } else if (c.type === "jelly") {
@@ -1294,12 +1376,13 @@ var DiveScene = (function () {
     // the surface and the light from above
     var surf = sy - cy;
     if (surf > -40 && surf < H + 40) {
-      cx.fillStyle = rgb(SKY); cx.fillRect(0, 0, W, Math.max(0, surf));
+      cx.fillStyle = rgb(SKIES[WEATHER] || SKY); cx.fillRect(0, 0, W, Math.max(0, surf));
+      weather(surf, t);
       cx.fillStyle = "rgba(255,255,255,.55)"; cx.beginPath(); cx.moveTo(0, surf);
       for (var x = 0; x <= W + 20; x += 20) cx.lineTo(x, surf + Math.sin(x / 38 + t / 520) * 3);
       cx.lineTo(W, surf + 6); cx.lineTo(0, surf + 6); cx.closePath(); cx.fill();
     }
-    var lightA = Math.max(0, 1 - Math.max(0, top) / 260) * 0.14;
+    var lightA = Math.max(0, 1 - Math.max(0, top) / 260) * 0.14 * ({ sun: 1.2, cloud: 0.75, rain: 0.45, snow: 0.6 }[WEATHER] || 1);   // less light through cloud
     if (lightA > 0.005) {
       cx.fillStyle = "rgba(255,255,240," + lightA + ")";
       for (var k = 0; k < 5; k++) { var bx = W * (0.1 + k * 0.22) + Math.sin(t / 2600 + k) * 30, ty = Math.max(0, surf); cx.beginPath(); cx.moveTo(bx, ty); cx.lineTo(bx + 40, ty); cx.lineTo(bx + 220, H); cx.lineTo(bx + 120, H); cx.closePath(); cx.fill(); }
@@ -1343,9 +1426,12 @@ var DiveScene = (function () {
     drawLandmarks(cy, sy, sx);
     if (visitor) {                                                        // a visiting sub, smaller and further off, nose first across the window
       var vr = (W < 600 ? 17 : 22) * visitor.s, vk = kind;
-      cx.save(); cx.globalAlpha = 0.8; cx.translate(visitor.x, visitor.y + Math.sin(t / 600) * 2);
-      kind = visitor.k; try { (HULLS[visitor.k] || hullCoral)(vr, t); } finally { kind = vk; }
-      cx.restore();
+      if (visitor.animal) { cx.save(); cx.globalAlpha = 0.85; beast(visitor.k, visitor.x, visitor.y + Math.sin(t / 600) * 2, visitor.s * (W < 600 ? 0.8 : 1), visitor.dir, t, 0); cx.restore(); }
+      else {
+        cx.save(); cx.globalAlpha = 0.8; cx.translate(visitor.x, visitor.y + Math.sin(t / 600) * 2); cx.scale(visitor.dir, 1);
+        kind = visitor.k; try { (HULLS[visitor.k] || hullCoral)(vr, t); } finally { kind = vk; }
+        cx.restore();
+      }
     }
     if (cam > 0 || dur > 0) ruler(sy);
     if (sy > -60 && sy < H + 60) sub(sx + Math.sin(Math.min(1, glideK) * Math.PI) * Math.abs(pitchMax) * W * 0.035, sy + off, t, cam);
@@ -1378,13 +1464,17 @@ var DiveScene = (function () {
       }
       var ar = anchorEl ? anchorEl.getBoundingClientRect() : null;
       if (visitOn && !visitor && t > nextVisit && ar && ar.height > 60 && cam <= 5) {
-        var ks = Object.keys(HULLS).filter(function (k) { return k !== kind; });
-        visitor = { k: ks[Math.floor(rnd() * ks.length)], x: ar.left - 90, y: ar.top + ar.height * (0.62 + rnd() * 0.22), s: 0.62, v: (ar.width + 180) / 7000, end: ar.left + ar.width + 90 };
+        var ks = Object.keys(HULLS).filter(function (k) { return k !== kind; }).concat(["whale", "manta", "shoal", "mosasaur", "ammonite", "whale", "shoal"]);
+        var vk = ks[Math.floor(rnd() * ks.length)], vd = rnd() < 0.5 ? 1 : -1;
+        try { var want = new URLSearchParams(location.search).get("visit"); if (want && ks.indexOf(want) >= 0) vk = want; } catch (e) { /* ?visit=<kind> shows that visitor first, for checking a drawing */ }
+        var big = vk === "whale" || vk === "mosasaur";
+        visitor = { k: vk, animal: !HULLS[vk], dir: vd, x: vd > 0 ? ar.left - 120 : ar.left + ar.width + 120, y: ar.top + ar.height * (0.62 + rnd() * 0.22), s: big ? 1.15 : HULLS[vk] ? 0.62 : 1.0,
+                    v: vd * (ar.width + 240) / (big ? 11000 : 7000), end: vd > 0 ? ar.left + ar.width + 120 : ar.left - 120 };
       }
       if (visitor) {
         visitor.x += visitor.v * dt;
-        if (rnd() < 0.08) bubbles.push({ x: visitor.x - 30 * visitor.s, y: visitor.y - subY() + wy(cam), r: 1 + rnd() * 1.6, v: 0.5 + rnd() * 0.5 });
-        if (visitor.x > visitor.end || !visitOn) { visitor = null; nextVisit = t + 9000 + rnd() * 7000; }
+        if (rnd() < 0.08) bubbles.push({ x: visitor.x - visitor.dir * 30 * visitor.s, y: visitor.y - subY() + wy(cam), r: 1 + rnd() * 1.6, v: 0.5 + rnd() * 0.5 });
+        if ((visitor.dir > 0 ? visitor.x > visitor.end : visitor.x < visitor.end) || !visitOn) { visitor = null; nextVisit = t + 9000 + rnd() * 7000; }
       }
       bubbles.forEach(function (b) { b.y -= b.v * dt / 16 * 2; b.x += Math.sin((b.y + b.r) / 18) * 0.3; });
       var cyNow = wy(cam), keep = [];
@@ -1431,6 +1521,7 @@ var DiveScene = (function () {
     icon: icon,
     setSub: function (id) { kind = HULLS[id] ? id : "coral"; if (cv) draw(performance.now()); },
     subs: function () { return Object.keys(HULLS); },
+    weather: function () { return WEATHER; },
     visitors: function (on) { visitOn = !!on && !still; if (!visitOn) visitor = null; else if (!nextVisit) nextVisit = performance.now() + 2500; },
     still: function () { return still; }
   };
