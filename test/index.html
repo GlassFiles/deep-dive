@@ -355,7 +355,7 @@ body:not(.typing) #qBody:not(:has(#ans)) .row:has(> #lock){position:sticky;botto
 .tleft{padding-right:10px}.fuseLeft{right:14px}
 /* the browser keeps a focused or scrolled-to answer box clear of that bar (scroll-padding marks the strip the bar covers) */
 body[data-view=play]:not(.typing) #vPlay{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-.packs > .mixpicks{grid-column:1/-1}.packs:has(> .mixpicks){grid-auto-flow:row dense}
+.packs > .mixpicks{grid-column:1/-1}
 /* the question's one-line copy shows on phones only (on a laptop the question is still in view); the right/wrong pop-up sits low, clear of the depth gain */
 .qecho{display:none}
 @media (max-width:600px){.qecho{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0 0 8px;font-size:15px;color:var(--dim)}
@@ -401,6 +401,10 @@ body.typing #qBody:has(textarea#ans) #lock{min-height:44px;padding:8px 14px;font
 .mixbox > summary::-webkit-details-marker{display:none}
 .mixbox > summary::after{content:"Change";margin-left:auto;font-size:14px;color:var(--sun);text-decoration:underline}
 .mixbox[open] > summary::after{content:"Done"}.mixbox[open]{padding-bottom:10px}
+/* the mix and your own pack get a full row each, so no shelf tile sits beside them above the mix options (Guy, 16 Nov 22:08) */
+.packs > .pack.mixtile{grid-column:1/-1}
+.packs:has(> .shelftile) > .pack[data-pack]{grid-column:1/-1}
+.shelfhead{grid-column:1/-1;margin:6px 0 -2px;font-weight:700;font-size:15px;color:var(--dim)}
 
 </style>
 </head>
@@ -2710,8 +2714,8 @@ function renderPackList() {
   $("packList").classList.toggle("many", all.length + (mixKey() ? 1 : 0) > 4);
   $("packList").innerHTML = ids.length ? ids.map((id) => {
     const p = packs[id].pack, n = (p.questions || []).length, from = packs[id].from;
-    return `<button class="pack" data-pack="${esc(id)}" aria-pressed="${id === S.packId}">${PackArt.svg(p)}<b>${esc(p.title)}${p.sample && !/sample/i.test(p.title) ? '<span class="tag">SAMPLE</span>' : ""}</b><small>${esc(p.subtitle || "")}</small><small>${n} questions${p.mixed ? " from " + p.packs.length + " packs" : all.length > 4 ? "" : from === "device" ? " · added on this device" : from === "shared" ? " · shared pack" : ""}</small></button>`;
-  }).join("") + (index ? shelves.map((g) => { const first = all.find((id) => shelfOf(packs[id].pack) === g);
+    return `<button class="pack${from === "mixed" ? " mixtile" : ""}" data-pack="${esc(id)}" aria-pressed="${id === S.packId}">${PackArt.svg(p)}<b>${esc(p.title)}${p.sample && !/sample/i.test(p.title) ? '<span class="tag">SAMPLE</span>' : ""}</b><small>${esc(p.subtitle || "")}</small><small>${n} questions${p.mixed ? " from " + p.packs.length + " packs" : all.length > 4 ? "" : from === "device" ? " · added on this device" : from === "shared" ? " · shared pack" : ""}</small></button>`;
+  }).join("") + (index ? `<p class="shelfhead">Shelves</p>` + shelves.map((g) => { const first = all.find((id) => shelfOf(packs[id].pack) === g);
       return `<button class="pack shelftile" data-shelfgo="${esc(g)}">${first ? PackArt.svg(packs[first].pack) : ""}<b>${esc(g)}</b><small>${counts[g]} pack${counts[g] === 1 ? "" : "s"}</small></button>`; }).join("") : "") : `<p class="note">No pack matches that.</p>`;
   $("packList").querySelectorAll(".shelftile").forEach((b) => b.onclick = () => { S.shelf = b.dataset.shelfgo; renderPackList(); const c = $("shelves").querySelector(`[data-shelf="${CSS.escape(S.shelf)}"]`); if (c) c.focus(); });
   if ($("mixPicks") || (packs[S.packId] && packs[S.packId].from === "mixed")) renderMixPicks();
