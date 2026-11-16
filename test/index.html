@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
 <title>Deep Dive</title>
 <meta name="description" content="Every good answer takes you deeper. A daily quiz, free dives and party mode; no logins.">
 <meta name="theme-color" content="#0b3d5c">
@@ -112,7 +112,7 @@ textarea.field{min-height:120px;resize:vertical}
 .packs.many .pack b{font-size:17px}.packs.many .pack[aria-pressed=true] b{padding-right:22px}
 .packs.many .pack small:nth-of-type(1){display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .packs.many .pack .art{width:84px;height:84px}
-.shelves .seg{flex:none;min-height:40px;padding:4px 14px}
+.shelves .seg{flex:none;min-height:44px;padding:4px 14px}
 .shelves .seg[aria-pressed=true]{padding:3px 13px}
 .shelves .seg small{opacity:.7;margin-left:4px;font-weight:600}
 .pack b{display:block;font-size:19px}
@@ -125,7 +125,10 @@ textarea.field{min-height:120px;resize:vertical}
 .chip{font-size:14px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--card2);border:1px solid var(--line)}
 .depthnow{font-family:"Barlow Condensed",sans-serif;font-size:28px;font-weight:700;white-space:nowrap}
 .prompt{font-size:clamp(21px,3.2vw,26px);line-height:1.3;font-weight:700;margin:6px 0 16px}
-.timer{height:6px;border-radius:3px;background:var(--card2);overflow:hidden;margin-bottom:14px}
+/* the timer stays in view while the player scrolls down to the answer (Guy, 16 Nov 2026): sticky at the top of the play area, with seconds */
+.tbar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:10px;margin:0 -6px 12px;padding:7px 6px;border-radius:10px;background:rgba(3,22,32,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.timer{flex:1;height:8px;border-radius:4px;background:var(--card2);overflow:hidden}
+.tleft{min-width:3.2em;text-align:right;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;color:var(--aqua)}.tleft.low{color:var(--coral)}
 .timer i{display:block;height:100%;width:100%;background:var(--aqua);transform-origin:left;transition:transform .25s linear}
 .timer.low i{background:var(--coral)}
 .opts{display:grid;gap:8px}
@@ -139,7 +142,7 @@ textarea.field{min-height:120px;resize:vertical}
 .bet small{display:block;font-size:13px;color:var(--dim);white-space:nowrap}
 .bet[aria-pressed=true]{border-color:var(--coral);background:rgba(255,106,77,.16)}
 .testband{position:sticky;top:0;z-index:30;background:#ffc23d;color:#2a1a00;font-size:14px;text-align:center;padding:6px 12px}
-.mixpicks .chips{display:flex;flex-wrap:wrap;gap:6px}.mixpicks .seg{min-height:40px;padding:4px 14px;font-weight:600}.mixpicks .seg[aria-pressed=false]{opacity:.6}.mixpicks .mixpick[aria-pressed=false]{text-decoration:line-through}.mixpicks .seg small{margin-left:6px;opacity:.75}.mixpicks .seg[aria-pressed=mixed]{border-style:dashed}.mixpicks .chips+.chips{margin-top:8px}
+.mixpicks .chips{display:flex;flex-wrap:wrap;gap:6px}.mixpicks .seg{min-height:44px;padding:4px 14px;font-weight:600}.mixpicks .seg[aria-pressed=false]{opacity:.6}.mixpicks .mixpick[aria-pressed=false]{text-decoration:line-through}.mixpicks .seg small{margin-left:6px;opacity:.75}.mixpicks .seg[aria-pressed=mixed]{border-style:dashed}.mixpicks .chips+.chips{margin-top:8px}
 .subicon{width:38px;height:24px;vertical-align:middle;margin:-6px 6px -4px -8px;display:inline-block}
 .clues{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}
 .clues li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;align-items:baseline;border:1px solid var(--line);border-radius:10px;background:var(--card2);padding:8px 10px;font-size:16px}
@@ -258,6 +261,69 @@ body[data-view=host] .app{grid-template-columns:minmax(0,1fr)}
 .katex{font-size:1.05em}
 .opt .katex,.hopt .katex{font-size:1em}
 
+/* the typing view (phones and tablets while an answer box has focus): fit the play screen to the visible area */
+body.typing .gauge,body.typing .win,body.typing .qhead,body.typing #btnQuit,body.typing .testband{display:none!important}
+body.typing .app{grid-template-columns:minmax(0,1fr)}
+body.typing[data-view=play] .main,body.typing[data-view=join] .main{height:var(--vvh,100svh);padding-top:8px}
+body.typing #vPlay{padding-bottom:12px}
+body.typing .prompt{font-size:19px;margin:4px 0 10px}
+body.typing #qCard{padding:12px}
+body.typing #qFormat{display:none}
+body.typing #qBody > .note{display:none}
+body.typing .clues{gap:4px}
+body.typing .clues li.locked{display:none}
+body.typing .clues li:not(.new):not(.locked){display:inline-flex;padding:2px 8px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;border-radius:999px}
+body.typing .clues li:not(.new) .cn{width:18px;height:18px;font-size:11px;margin-right:6px}
+body.typing .cluebar{margin:0 0 6px}
+body.typing textarea.field{min-height:84px}
+#dbg{position:fixed;left:6px;right:6px;bottom:calc(6px + env(safe-area-inset-bottom));z-index:99;background:rgba(0,0,0,.78);color:#fff;font:600 11px/1.35 ui-monospace,Menlo,monospace;padding:4px 8px;border-radius:8px;pointer-events:none}
+#dbgProbe{position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#hTimer{margin-bottom:14px}
+/* the typing view on the shortest screens: tighter spacing, labels kept for screen readers only, older clues as chips on one line */
+body.typing .tbar{margin-bottom:6px;padding:4px 6px}
+body.typing .prompt{margin:2px 0 8px}
+body.typing #qCard{padding:10px 12px}
+body.typing #qBody .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body.typing .clues{display:flex;flex-wrap:wrap}
+body.typing .clues li.new{flex:1 1 100%}
+#moreClue .short{display:none}
+/* clue by clue while typing: the box and a short Next clue button share one row */
+body.typing #qBody:has(#clueList){display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+body.typing #qBody:has(#clueList) > *{flex:1 1 100%}
+body.typing #qBody:has(#clueList) .clues{order:1}
+body.typing #qBody:has(#clueList) > #ans,body.typing #qBody:has(#clueList) > .fuse{flex:1 1 0;min-width:0;order:3}
+body.typing #qBody:has(#clueList) .cluebar{flex:0 0 auto;order:4;margin:0}
+body.typing #qBody:has(#clueList) .cluebar .note{display:none}
+body.typing #qBody:has(#clueList) > .row:last-child{order:5;margin-top:4px!important}
+body.typing #moreClue .long{display:none}body.typing #moreClue .short{display:inline}
+#qPrompt{scroll-margin-top:52px}   /* the sticky timer bar never covers the question when it is scrolled into view */
+.subMore{border-style:dashed}
+
+/* the fuse: the timer drawn round the answer box (Guy, 16 Nov 2026) */
+.fuse{position:relative;display:block}
+.fuse .field{display:block;border-color:transparent;padding-right:58px}
+.fuseSvg{position:absolute;left:-3px;top:-3px;width:calc(100% + 6px);height:calc(100% + 6px);overflow:visible;pointer-events:none}
+.fuseSvg rect{fill:none;stroke-width:3}
+.fuseSvg .track{stroke:var(--line)}
+.fuseSvg .burn{stroke:var(--aqua);stroke-linecap:round;transition:stroke .4s}
+.fuseSvg .spark{fill:#fff4cf;transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 3px #ffd36b) drop-shadow(0 0 6px #ff9a3c)}
+.fuseLeft{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;color:var(--aqua);pointer-events:none;transition:color .4s}
+.fuse.tall .fuseLeft{top:auto;bottom:10px;transform:none}
+.fuse.mid .burn{stroke:#ffc857}.fuse.mid .fuseLeft{color:#ffc857}
+.fuse.low .burn{stroke:var(--coral)}.fuse.low .fuseLeft{color:var(--coral)}
+.fuse.last .burn{animation:fizz .18s steps(2) infinite}
+.fuse.last .spark{animation:sparkle .14s steps(2) infinite}
+.fuse.last .fuseLeft{font-size:17px}
+.fuse.stopped .spark,.fuse.out .spark{display:none}
+.fuse.stopped .burn{stroke:var(--dim);opacity:.5}.fuse.stopped .fuseLeft{color:var(--dim)}
+.fuse.out .track{stroke:rgba(255,106,77,.45)}.fuse.out .fuseLeft{color:var(--coral)}
+@keyframes fizz{0%{opacity:1}100%{opacity:.45}}
+@keyframes sparkle{0%{transform:scale(1.35)}100%{transform:scale(.75)}}
+@media (prefers-reduced-motion:reduce){.fuse.last .burn,.fuse.last .spark{animation:none}.fuseSvg .burn,.fuseLeft{transition:none}}
+/* in the fuse the focus ring is the brighter track and box, so a coral ring never reads as "time is short" */
+.fuse .field:focus-visible,.fuse .field:focus{outline:none;background:rgba(234,247,248,.14)}
+.fuse:focus-within .track{stroke:rgba(234,247,248,.55)}
+
 </style>
 </head>
 <body>
@@ -294,7 +360,7 @@ body[data-view=host] .app{grid-template-columns:minmax(0,1fr)}
         <div class="packs" id="packList"></div>
         <p class="note" id="packNote" style="margin-top:10px"></p>
         <div class="row themes" role="group" aria-label="How your score moves"><span class="note">Play as</span><button class="seg" data-theme="dive" aria-pressed="true">Dive</button><button class="seg" data-theme="golf" aria-pressed="false">Golf</button></div>
-        <div class="row themes" id="subRow" role="group" aria-label="Your submarine"><span class="note">Your sub</span><button class="seg" data-sub="coral" aria-pressed="true">Coral</button><button class="seg" data-sub="ram" aria-pressed="false">Ram</button><button class="seg" data-sub="nautilus" aria-pressed="false">Nautilus</button><button class="seg" data-sub="bathy" aria-pressed="false">Bathyscaphe</button><button class="seg" data-sub="cray" aria-pressed="false">Crayfish</button><button class="seg" data-sub="titan" aria-pressed="false">Titan</button><button class="seg" data-sub="bunny" aria-pressed="false">Bunny</button></div>
+        <div class="row themes" id="subRow" role="group" aria-label="Your submarine"><span class="note">Your sub</span><button class="seg" data-sub="coral" aria-pressed="true">Coral</button><button class="seg" data-sub="ram" aria-pressed="false">Ram</button><button class="seg" data-sub="nautilus" aria-pressed="false">Nautilus</button><button class="seg" data-sub="bathy" aria-pressed="false">Bathyscaphe</button><button class="seg" data-sub="cray" aria-pressed="false">Crayfish</button><button class="seg" data-sub="titan" aria-pressed="false">Titan</button><button class="seg" data-sub="bunny" aria-pressed="false">Bunny</button><button class="seg subMore" id="subMore" aria-expanded="false" aria-controls="subRow">More subs</button></div>
         <div class="row" style="margin-top:12px">
           <button class="btn" id="btnDaily">Today's descent</button>
           <button class="btn" id="btnFree">Free dive</button>
@@ -340,7 +406,7 @@ body[data-view=host] .app{grid-template-columns:minmax(0,1fr)}
         <span class="chip" id="qCount">Question 1 of 7</span>
         <span class="sr" id="depthNow" aria-live="polite">0 m</span>
       </div>
-      <div class="timer" id="timer"><i></i></div>
+      <div class="tbar" id="tbar"><div class="timer" id="timer"><i></i></div><span class="tleft" id="tleft" aria-hidden="true"></span></div>
       <div class="card" id="qCard">
         <span class="chip" id="qFormat">Rare answer</span>
         <p class="prompt" id="qPrompt" tabindex="-1"></p>
@@ -2164,6 +2230,15 @@ function shotsSoFar() { return S.results.map((r) => r.points * YD); }
 document.querySelectorAll(".seg[data-theme]").forEach((b) => b.onclick = () => { store.set("theme", b.dataset.theme); useTheme(); renderHome(); const again = document.querySelector(`.seg[data-theme="${b.dataset.theme}"]`); if (again) again.focus(); });
 /* each sub button carries a small still drawing of its sub */
 document.querySelectorAll(".seg[data-sub]").forEach((b) => { const c = document.createElement("canvas"); c.className = "subicon"; c.setAttribute("aria-hidden", "true"); b.prepend(c); });
+/* three subs on show, the chosen one too, and the rest behind "More subs" (Guy, 16 Nov 2026: save space on the screen) */
+const SUB_CORE = ["coral", "ram", "nautilus"];
+function showSubs(all) {
+  const sk = subKind();
+  document.querySelectorAll(".seg[data-sub]").forEach((b) => b.classList.toggle("hide", !all && SUB_CORE.indexOf(b.dataset.sub) < 0 && b.dataset.sub !== sk));
+  const more = $("subMore"), extra = document.querySelectorAll(".seg[data-sub]").length - SUB_CORE.length - (SUB_CORE.indexOf(sk) < 0 ? 1 : 0);
+  more.setAttribute("aria-expanded", String(!!all)); more.textContent = all ? "Fewer subs" : `More subs (${extra})`;
+}
+$("subMore").onclick = () => { const open = $("subMore").getAttribute("aria-expanded") !== "true"; showSubs(open); if (open) drawSubIcons(); };
 function drawSubIcons() { document.querySelectorAll(".seg[data-sub] canvas.subicon").forEach((c) => { try { DiveScene.icon(c, c.parentElement.dataset.sub); } catch (e) { /* the button still has its name */ } }); }
 requestAnimationFrame(drawSubIcons); window.addEventListener("load", drawSubIcons);
 document.querySelectorAll(".seg[data-sub]").forEach((b) => b.onclick = () => { store.set("sub", b.dataset.sub); DiveScene.setSub(b.dataset.sub); drawGauge(); document.querySelectorAll(".seg[data-sub]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); });
@@ -2214,6 +2289,7 @@ function renderHome() {
   const T = theme(); useTheme();
   document.querySelectorAll(".seg[data-theme]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === T.id)));
   const sk = subKind(); DiveScene.setSub(sk); document.querySelectorAll(".seg[data-sub]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sub === sk)));
+  if ($("subMore").getAttribute("aria-expanded") !== "true") showSubs(false);
   $("lede").textContent = `${st.roundLength} questions a round. ${T.lede}`;
   $("btnFree").textContent = T.free;
   $("packNote").textContent = `${st.roundLength} questions a round · ${st.timer ? st.seconds + " s each (" + st.shortSeconds + " s for written answers" + (st.formats.indexOf("clues") >= 0 ? ", " + st.clueSeconds + " s for clue by clue" : "") + ")" : "no time limit"} · formats: ${st.formats.map((f) => DD.FORMAT_NAMES[f]).join(", ")}` + (p.checked ? ` · facts checked ${p.checked}` : "");
@@ -2276,6 +2352,38 @@ function qNow() { if (S.mode === "party") return P && P.q; const p = curPack(); 
 function n() { return S.qids.length; }
 function depthSoFar() { return DD.runningDepths(S.results.map((r) => r.points), n()).pop() || 0; }
 function depthLabel(m) { return m < 0 ? "Surface, owing " + fmtM(-m) : fmtM(m); }
+/* The typing view (16 Nov 2026, research/IPHONE_WEB_GAMES.md): on a phone or tablet the on-screen keyboard shrinks only the visible
+   area, so while an answer box has focus the play screen is sized to what is visible, the sea and gauge fold away, and the question
+   stays directly above the box. On by state (an answer box has focus on a touch screen), never by guessing the device.
+   ?kb=<pixels> simulates a keyboard of that height (for the audit); ?debug=1 shows the numbers. */
+const QS = new URLSearchParams(location.search), SIMKB = Math.max(0, Number(QS.get("kb")) || 0), DEBUG = QS.get("debug") === "1";
+const coarse = () => (window.matchMedia && matchMedia("(pointer: coarse)").matches) || SIMKB > 0;
+function answerFocused() { const a = document.activeElement; return !!a && a.matches && a.matches("#vPlay input.field, #vPlay textarea.field, #vJoin input.field, #vJoin textarea.field"); }
+function fitTyping() {
+  const vv = window.visualViewport;
+  /* a keyboard is up when the visible area is well short of the page (iOS, Android by default) or the page itself has shrunk well
+     below the screen (Android with interactive-widget=resizes-content); the audit simulates one with ?kb= */
+  const kbUp = SIMKB > 0 || (vv && vv.height < innerHeight * 0.85) || innerHeight < screen.height * 0.72;
+  const typing = answerFocused() && coarse() && kbUp;
+  const h = Math.round((vv ? vv.height : innerHeight) - (typing ? SIMKB : 0));
+  document.documentElement.style.setProperty("--vvh", h + "px");
+  if (document.body.classList.contains("typing") !== typing) {
+    document.body.classList.toggle("typing", typing);
+    if (typing) DiveScene.pause(); else if (theme().id !== "golf") DiveScene.resume();
+    if (typing) { window.scrollTo(0, 0); const p = $("qPrompt"); if (p && S.view === "play") p.scrollIntoView({ block: "start" }); }
+  }
+  if (DEBUG) debugPanel();
+}
+function debugPanel() {
+  let d = $("dbg"); if (!d) { d = document.createElement("div"); d.id = "dbg"; document.body.appendChild(d); }
+  let pr = $("dbgProbe"); if (!pr) { pr = document.createElement("div"); pr.id = "dbgProbe"; document.body.appendChild(pr); }
+  const cs = getComputedStyle(pr), vv = window.visualViewport;
+  d.textContent = `screen ${innerWidth}x${innerHeight} · visible ${vv ? Math.round(vv.width) + "x" + Math.round(vv.height) : "?"} · offset ${vv ? Math.round(vv.offsetTop) : "?"} · zoom ${vv ? vv.scale.toFixed(2) : "?"} · safe ${[cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft].map((x) => parseInt(x, 10)).join("/")} · dpr ${devicePixelRatio} · typing ${document.body.classList.contains("typing") ? "on" : "off"}${SIMKB ? " · simulated keyboard " + SIMKB : ""}`;
+}
+if (window.visualViewport) { visualViewport.addEventListener("resize", fitTyping); visualViewport.addEventListener("scroll", fitTyping); }
+document.addEventListener("focusin", fitTyping); document.addEventListener("focusout", () => setTimeout(fitTyping, 60));
+window.addEventListener("resize", fitTyping);
+if (DEBUG) { setInterval(debugPanel, 700); debugPanel(); }
 function savePend(extra) { if (!S.pend || !Q) return; Object.assign(S.pend, { pick: Q.pick, bet: Q.bet, order: Q.order, touched: Q.touched, seen: Q.seen }, extra || {}); snapshot(); }
 /* clue by clue: the clues seen so far, the rest shown locked with what they would be worth; all of them once answered */
 function drawClues(all) {
@@ -2285,7 +2393,7 @@ function drawClues(all) {
     : all ? `<li class="unseen"><span class="cn">${i + 1}</span><span>${rich(c)}</span></li>`
     : `<li class="locked"><span class="cn">${i + 1}</span><span>Clue ${i + 1} · worth +${F(DD.cluePoints(k, i + 1) * mpp)}</span></li>`).join("");
   const more = $("moreClue"), worth = $("clueWorth");
-  if (more) { more.disabled = !!all || Q.seen >= k; more.textContent = Q.seen >= k ? "That was the last clue" : `Next clue (then worth +${F(DD.cluePoints(k, Q.seen + 1) * mpp)})`; more.closest(".row").classList.toggle("hide", !!all); }
+  if (more) { more.disabled = !!all || Q.seen >= k; more.innerHTML = Q.seen >= k ? '<span class="long">That was the last clue</span><span class="short">No more</span>' : `<span class="long">Next clue (then worth +${F(DD.cluePoints(k, Q.seen + 1) * mpp)})</span><span class="short">Next clue</span>`; more.closest(".row").classList.toggle("hide", !!all); }
   if (worth) worth.textContent = all ? "" : `Answer now for +${F(DD.cluePoints(k, Q.seen) * mpp)}`;
 }
 function ownRuling(q, raw) {
@@ -2297,6 +2405,7 @@ function ownRuling(q, raw) {
 }
 
 function ask() {
+  document.querySelectorAll(".vpop").forEach((x) => x.remove());
   if (S.results.length > S.idx) S.idx = S.results.length;
   const q = qNow(), p = curPack(), st = DD.settingsOf(p);
   if (!q) return finish();
@@ -2313,9 +2422,9 @@ function ask() {
   $("playNote").textContent = S.mode === "party" ? "Party: answer before the time runs out." : S.mode === "daily" ? theme().today + ": this one counts." : theme().free + ": practice, not on the scoreboard.";
   const body = $("qBody"), mpp = theme().per(n()), F = theme().fmt;
   if (q.format === "rare") {
-    body.innerHTML = `<label class="lbl" for="ans">Your answer</label><input class="field" id="ans" autocomplete="off" autocapitalize="words" aria-describedby="qPrompt" placeholder="${theme().hint}"><div class="row" style="margin-top:12px"><button class="btn go" id="lock">${theme().act}</button></div>`;
+    body.innerHTML = `<label class="lbl" for="ans">Your answer</label><input class="field" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-describedby="qPrompt" placeholder="${theme().hint}"><div class="row" style="margin-top:12px"><button class="btn go" id="lock">${theme().act}</button></div>`;
   } else if (q.format === "number") {
-    body.innerHTML = `<label class="lbl" for="ans">Your estimate${q.unit ? " (" + esc(q.unit) + ")" : ""}</label><input class="field" id="ans" aria-describedby="qPrompt" inputmode="${Math.abs(Number(q.answer)) < 0.001 || Math.abs(Number(q.answer)) >= 1e7 ? "text" : "decimal"}" autocomplete="off" placeholder="${Math.abs(Number(q.answer)) < 0.001 ? "e.g. 1.5e-4 or 1.5x10^-4" : q.scale === "log" ? "e.g. 25,000 or 25k" : "A number"}"><div class="row" style="margin-top:12px"><button class="btn go" id="lock">${theme().act}</button></div>`;
+    body.innerHTML = `<label class="lbl" for="ans">Your estimate${q.unit ? " (" + esc(q.unit) + ")" : ""}</label><input class="field" id="ans" aria-describedby="qPrompt" enterkeyhint="go" inputmode="${Math.abs(Number(q.answer)) < 0.001 || Math.abs(Number(q.answer)) >= 1e7 ? "text" : "decimal"}" autocomplete="off" placeholder="${Math.abs(Number(q.answer)) < 0.001 ? "e.g. 1.5e-4 or 1.5x10^-4" : q.scale === "log" ? "e.g. 25,000 or 25k" : "A number"}"><div class="row" style="margin-top:12px"><button class="btn go" id="lock">${theme().act}</button></div>`;
   } else if (q.format === "choice") {
     body.innerHTML = `<div class="opts">${q.options.map((o, i) => `<button class="opt" data-i="${i}" aria-pressed="${i === Q.pick}">${"ABCDE"[i]}. ${rich(o)}</button>`).join("")}</div>
       <p class="lbl" style="margin:14px 0 0">How sure are you?</p><p class="note" style="margin:0">${theme().bet}</p>
@@ -2329,20 +2438,23 @@ function ask() {
     body.innerHTML = `<div class="ends"><span>${esc(firstWord(q.orderLabel))}</span><span>${esc(lastWord(q.orderLabel))}</span></div><ol class="olist" id="olist"></ol><p class="note" style="margin:0">Drag an item by its dots, or use the arrows. Each item keeps its shade, so you can see what you have moved.</p><div class="row" style="margin-top:12px"><button class="btn go" id="lock">Lock the order</button></div>`;
     drawOrder();
   } else if (q.format === "short") {
-    body.innerHTML = `<label class="lbl" for="ans">Your answer (${DD.marksOf(q)} mark${DD.marksOf(q) > 1 ? "s" : ""})</label><textarea class="field" id="ans" aria-describedby="qPrompt" placeholder="Write it as you would in the exam"></textarea><div class="row" style="margin-top:12px"><button class="btn go" id="lock">Hand it in</button></div>`;
+    body.innerHTML = `<label class="lbl" for="ans">Your answer (${DD.marksOf(q)} mark${DD.marksOf(q) > 1 ? "s" : ""})</label><textarea class="field" id="ans" aria-describedby="qPrompt" enterkeyhint="enter" placeholder="Write it as you would in the exam"></textarea><div class="row" style="margin-top:12px"><button class="btn go" id="lock">Hand it in</button></div>`;
   } else if (q.format === "clues") {
-    body.innerHTML = `<p class="note" style="margin:0 0 8px">One clue at a time, hardest first. Answer as soon as you know: the fewer clues you need, the more it is worth. A wrong guess scores nothing.</p><ol class="clues" id="clueList" aria-live="polite"></ol><div class="row cluebar"><button class="btn small" id="moreClue"></button><span class="note" id="clueWorth"></span></div><label class="lbl" for="ans">Your answer</label><input class="field" id="ans" autocomplete="off" autocapitalize="words" aria-describedby="qPrompt clueList" placeholder="Who or what is it?"><div class="row" style="margin-top:12px"><button class="btn go" id="lock">${theme().act}</button></div>`;
+    body.innerHTML = `<p class="note" style="margin:0 0 8px">One clue at a time, hardest first. Answer as soon as you know: the fewer clues you need, the more it is worth. A wrong guess scores nothing.</p><ol class="clues" id="clueList" aria-live="polite"></ol><div class="row cluebar"><button class="btn small" id="moreClue"></button><span class="note" id="clueWorth"></span></div><label class="lbl" for="ans">Your answer</label><input class="field" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-describedby="qPrompt clueList" placeholder="Who or what is it?"><div class="row" style="margin-top:12px"><button class="btn go" id="lock">${theme().act}</button></div>`;
     drawClues(false);
-    $("moreClue").onclick = () => { if (Q.locked || Q.seen >= (q.clues || []).length) return; Q.seen++; savePend(); drawClues(false); const a = $("ans"); if (a) a.focus({ preventScroll: true }); };
+    $("moreClue").onclick = () => { if (Q.locked || Q.seen >= (q.clues || []).length) return; Q.seen++; savePend(); drawClues(false); const a = $("ans"); if (a && !coarse()) a.focus({ preventScroll: true }); };
   }
   if (q.code) body.insertAdjacentHTML("afterbegin", codeBlock(q));
   $("lock").onclick = () => lock(false);
   const ans = $("ans");
   if (ans) {
+    if (st.timer) wrapFuse(ans);
     if (pend && pend.raw != null) ans.value = pend.raw;
     ans.oninput = () => savePend({ raw: ans.value });
     if (ans.tagName === "INPUT") ans.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); lock(false); } };
-    ans.focus({ preventScroll: true });
+    /* on a touch screen the question is read first and the keyboard comes up when the player taps the box (rule 6);
+       with a real keyboard the box takes focus at once */
+    if (coarse()) $("qPrompt").focus({ preventScroll: true }); else ans.focus({ preventScroll: true });
   } else $("qPrompt").focus({ preventScroll: true });
   const secs = S.mode === "party" ? P.dur : q.format === "short" ? st.shortSeconds : q.format === "clues" ? st.clueSeconds : q.secs || st.seconds;
   const end = S.mode === "party" ? P.end : pend && pend.end ? pend.end : Date.now() + secs * 1000;
@@ -2408,17 +2520,51 @@ function drawOrder() {
   }));
 }
 
+/* the timer as a fuse round the answer box (Guy, 16 Nov 2026): it burns clockwise from the top left, aqua, then amber
+   at half time, then coral in the last quarter, and fizzles in the last five seconds. The seconds stay printed in the box,
+   so colour is never the only signal. Formats with no box (choices, order, golf) keep the sticky bar at the top. */
+function wrapFuse(ans) {
+  const w = document.createElement("div");
+  w.className = "fuse" + (ans.tagName === "TEXTAREA" ? " tall" : ""); w.id = "fuse";
+  ans.replaceWith(w); w.appendChild(ans);
+  w.insertAdjacentHTML("beforeend", '<svg class="fuseSvg" aria-hidden="true" focusable="false"><rect class="track"/><rect class="burn"/><circle class="spark" r="4.5"/></svg><span class="fuseLeft" aria-hidden="true"></span>');
+}
+function drawFuse(frac, left) {
+  const w = $("fuse"); if (!w) return;
+  frac = Math.max(0, Math.min(1, frac)); Q.frac = frac;
+  const W = w.offsetWidth, H = w.offsetHeight, R = 10, pad = 3, svg = w.querySelector("svg");
+  const track = svg.querySelector(".track"), burn = svg.querySelector(".burn"), spark = svg.querySelector(".spark");
+  for (const el of [track, burn]) { el.setAttribute("x", pad); el.setAttribute("y", pad); el.setAttribute("width", Math.max(0, W)); el.setAttribute("height", Math.max(0, H)); el.setAttribute("rx", R); }
+  let P = 2 * (W + H) - 8 * R + 2 * Math.PI * R;
+  try { const t = burn.getTotalLength(); if (t > 0) P = t; } catch (e) { /* older engines: the formula above */ }
+  const gone = P * (1 - frac);
+  burn.style.strokeDasharray = `${P * frac} ${P + 2}`; burn.style.strokeDashoffset = String(-gone);
+  let pt = null; try { pt = burn.getPointAtLength(gone); } catch (e) { pt = null; }
+  if (pt && frac > 0 && frac < 1) { spark.setAttribute("cx", pt.x); spark.setAttribute("cy", pt.y); spark.style.display = ""; } else spark.style.display = "none";
+  w.classList.toggle("mid", frac <= 0.5 && frac > 0.25); w.classList.toggle("low", frac <= 0.25);
+  if (left != null) { w.classList.toggle("last", left > 0 && left <= 5000); w.querySelector(".fuseLeft").textContent = Math.ceil(left / 1000) + " s"; }
+}
+function fuseStop(timedOut) {
+  const w = $("fuse"); if (!w) return;
+  drawFuse(timedOut ? 0 : Q.frac == null ? 1 : Q.frac, timedOut ? 0 : null);
+  w.classList.remove("last"); w.classList.add(timedOut ? "out" : "stopped");
+}
 function startTimer(end, secs, on) {
   clearInterval(tick);
-  const bar = $("timer"), fill = bar.querySelector("i");
-  bar.classList.toggle("hide", !on); bar.classList.remove("low");
+  const bar = $("timer"), fill = bar.querySelector("i"), tl = $("tleft"), fz = $("fuse");
+  $("tbar").classList.toggle("hide", !on || !!fz); bar.classList.remove("low");
   if (!on) return;
   Q.end = end;
-  fill.style.transform = `scaleX(${Math.max(0, Math.min(1, (end - Date.now()) / (secs * 1000)))})`;
+  const show = () => {
+    const left = Math.max(0, end - Date.now()), frac = left / (secs * 1000);
+    if (fz) drawFuse(frac, left);
+    else { fill.style.transform = `scaleX(${Math.max(0, Math.min(1, frac))})`; bar.classList.toggle("low", left < 6000); tl.textContent = Math.ceil(left / 1000) + " s"; tl.classList.toggle("low", left < 6000); }
+    return left;
+  };
+  show();
   if (end <= Date.now()) { lock(true); return; }
   tick = setInterval(() => {
-    const left = Math.max(0, end - Date.now()); fill.style.transform = `scaleX(${left / (secs * 1000)})`;
-    bar.classList.toggle("low", left < 6000);
+    const left = show();
     if (left <= 0) { clearInterval(tick); if (!Q.locked) lock(true); }
   }, 250);
 }
@@ -2429,9 +2575,10 @@ async function lock(timedOut, resumed) {
   const ans = $("ans"), raw = ans ? ans.value : "";
   if (q.format === "number" && timedOut !== true && raw.trim() && !isFinite(DD.parseNumber(raw, q.unit))) {
     const msg = $("numMsg") || Object.assign(document.createElement("p"), { id: "numMsg", className: "note err" });
-    msg.textContent = "That is not a number we can read. Try 1884, 33k or 1.7e-5."; ans.after(msg); ans.focus(); return;
+    msg.textContent = "That is not a number we can read. Try 1884, 33k or 1.7e-5."; (ans.closest(".fuse") || ans).after(msg); ans.focus(); return;
   }
   clearInterval(tick);
+  fuseStop(timedOut === true);
   Q.locked = true;
   savePend({ phase: "locked", raw, timedOut: timedOut === true });
   const lockBtn = $("lock"); if (lockBtn) { lockBtn.disabled = true; lockBtn.closest(".row").classList.add("hide"); }
