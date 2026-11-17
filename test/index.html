@@ -2726,7 +2726,8 @@ $("packSearch").addEventListener("input", (e) => { S.packQ = e.target.value; ren
 /* ---------- home ---------- */
 function startLabels(p, played) {
   const T = theme(), st = DD.settingsOf(p);
-  $("btnStartTxt").textContent = !played && liveDaily() ? "Resume your " + T.go : played ? "Start a " + T.free.toLowerCase() : "Start " + T.today.charAt(0).toLowerCase() + T.today.slice(1);
+  const tq = qTypes();     // with only some kinds of question chosen, the big button starts that free dive (Guy, 17 Nov: "rare only" gave a maths question from today's descent)
+  $("btnStartTxt").textContent = tq.length ? `Start a ${tq.map((k) => TYPE_NAMES[k]).join(" and ").toLowerCase()} dive` : !played && liveDaily() ? "Resume your " + T.go : played ? "Start a " + T.free.toLowerCase() : "Start " + T.today.charAt(0).toLowerCase() + T.today.slice(1);
   $("startNote").textContent = `${p.title} · ${st.roundLength} questions${played ? " · today's " + T.go + " is done, so this one is practice" : ""}. Change the pack or how you play below.`;
 }
 function renderHome() {
@@ -2745,7 +2746,7 @@ function renderHome() {
   $("packNote").textContent = `${p.title}: ${st.roundLength} questions a round, ${st.timer ? st.seconds + " s each" : "no time limit"}` + (p.checked ? ` · facts checked ${p.checked}` : "");   // the full timings and kinds live under Settings and "How the dive is scored" (14n)
   const played = store.get("played", {})[playedKey(p.id, S.dateKey, S.name)];
   $("btnDaily").disabled = !!played;
-  $("btnDaily").textContent = !played && liveDaily() ? "Resume your " + T.go : T.today;
+  $("btnDaily").textContent = !played && liveDaily() ? "Resume your " + T.go : T.today + (qTypes().length ? " (every kind)" : "");
   startLabels(p, played);
   const playedVal = played ? (T.id === "golf" ? totalOf(played.pts || [], (played.pts || []).length) : played.d) : 0;
   $("dailyNote").textContent = played ? `You ${T.verb} ${T.fmt(playedVal)} in today's ${p.title} ${T.go}. A new one opens at midnight UK time; ${T.free.toLowerCase()}s are unlimited.` : `${T.today} is the same ${st.roundLength} questions for everyone (${S.dateKey}, UK date). One go each; ${T.free.toLowerCase()}s are for practice.`;
@@ -2792,7 +2793,7 @@ function drawTypes() {
 document.querySelectorAll(".seg[data-qtype]").forEach((b) => b.onclick = () => {
   const k = b.dataset.qtype; let t = qTypes();
   t = !k ? [] : t.indexOf(k) >= 0 ? t.filter((x) => x !== k) : t.concat(k);
-  store.set("qtypes", t); drawTypes(); setSummary();
+  store.set("qtypes", t); drawTypes(); setSummary(); renderHome(); const again = document.querySelector(`.seg[data-qtype="${k}"]`); if (again) again.focus();
 });
 function setSummary() {
   const t = qTypes(), c = store.get("clock", "normal");
@@ -2810,7 +2811,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) { Q.hiddenAt = Date.now(); clearInterval(tick); }
   else if (Q.hiddenAt) { const gone = Date.now() - Q.hiddenAt; Q.hiddenAt = 0; Q.end += gone; if (S.pend) { S.pend.end = Q.end; savePend(); } startTimer(Q.end, Q.secs, true); }
 });
-$("btnStart").onclick = () => { const l = liveDaily(), p = curPack(), played = store.get("played", {})[playedKey(p.id, S.dateKey, S.name)]; if (l && !played) { S = Object.assign(S, l); show("play"); ask(); } else start(played ? "free" : "daily"); };
+$("btnStart").onclick = () => { if (qTypes().length) return start("free"); const l = liveDaily(), p = curPack(), played = store.get("played", {})[playedKey(p.id, S.dateKey, S.name)]; if (l && !played) { S = Object.assign(S, l); show("play"); ask(); } else start(played ? "free" : "daily"); };
 $("btnRemove").onclick = () => {
   const id = S.packId; store.set("packs", (store.get("packs", []) || []).filter((x) => x.id !== id));
   delete packs[id];
